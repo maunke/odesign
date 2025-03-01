@@ -128,14 +128,10 @@ impl NLPFunctionTarget for CostsDispersionFunction {
 fn main() -> Result<()> {
     // define set of features
     let mut fs = FeatureSet::new();
-    let c: Arc<_> = Monomial { i: 0 }.into();
-    fs.push(c);
-    let c: Arc<_> = Monomial { i: 1 }.into();
-    fs.push(c);
-    let c: Arc<_> = Monomial { i: 2 }.into();
-    fs.push(c);
-    let c: Arc<_> = Monomial { i: 3 }.into();
-    fs.push(c);
+    for i in 0..4 {
+        let c: Arc<_> = Monomial { i }.into();
+        fs.push(c);
+    }
 
     // define linear model with features
     let lm = LinearModel::new(fs.features);
