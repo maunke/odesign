@@ -1,5 +1,5 @@
 [package]
-name = "odesign_examples"
+name = "odesign-examples"
 version.workspace = true
 edition.workspace = true
 description.workspace = true
