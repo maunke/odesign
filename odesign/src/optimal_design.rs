@@ -1,7 +1,7 @@
 use crate::{
     interior_point_method::{InequalityConstraint, NLPBound, VoronoiConstraint},
     Error, Grid, LinearEqualityConstraint, MatrixDRows, NLPSolver, NLPSolverConstraints,
-    NLPSolverOptions, Optimality, OptimalityMeasures, Result,
+    NLPSolverOptions, Optimalities, Optimality, OptimalityMeasures, Result,
 };
 use faer_ext::IntoFaer;
 use nalgebra::{DMatrix, DVector, SVector};
@@ -249,7 +249,7 @@ impl Default for OptimalDesignCriteria {
 /// This solver implements the "Adaptive grid Semidefinite Programming for finding optimal
 /// designs" method. [Read more](https://doi.org/10.1007/s11222-017-9741-y)
 pub struct OptimalDesign<const D: usize> {
-    optimalities: Vec<Arc<dyn Optimality<D> + Send + Sync>>,
+    optimalities: Optimalities<D>,
     weights: Vec<f64>,
     design: Design<D>,
     constraint: DesignConstraint<D>,
@@ -314,11 +314,7 @@ impl<const D: usize> OptimalDesign<D> {
     }
 
     /// Returns the initialized solver with given optimalities
-    pub fn with_optimalities(
-        mut self,
-        optimalities: Vec<Arc<dyn Optimality<D> + Send + Sync>>,
-        weights: Vec<f64>,
-    ) -> Self {
+    pub fn with_optimalities(mut self, optimalities: Optimalities<D>, weights: Vec<f64>) -> Self {
         self.optimalities = optimalities;
         self.weights = weights;
         self

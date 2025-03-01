@@ -3,7 +3,7 @@ use nalgebra::{SVector, Vector1};
 use num_dual::DualNum;
 use odesign::{
     DOptimality, Feature, FeatureFunction, FeatureSet, LinearModel, MatrixDRows, NLPFunctionTarget,
-    OptimalDesign, Optimality, Result,
+    OptimalDesign, Optimalities, Optimality, Result,
 };
 use std::sync::Arc;
 
@@ -143,8 +143,7 @@ fn main() -> Result<()> {
     // define optimality, bound and init design args
     let d_optimality: Arc<_> = DOptimality::new(lm.into()).into();
     let costs_optimality: Arc<_> = MeasurementCosts {}.into();
-    let optimalities: Vec<Arc<dyn Optimality<1> + Send + Sync>> =
-        vec![d_optimality, costs_optimality];
+    let optimalities: Optimalities<1> = vec![d_optimality, costs_optimality];
     let optimalities_weights = vec![1., 10.];
     let lower = Vector1::new(-1.0);
     let upper = Vector1::new(1.0);

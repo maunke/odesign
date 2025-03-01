@@ -7,6 +7,9 @@ use faer::Mat;
 use rayon::prelude::*;
 use std::sync::Arc;
 
+/// Vector of optimalities
+pub type Optimalities<const D: usize> = Vec<Arc<dyn Optimality<D> + Send + Sync>>;
+
 /// Defines a list of optimality measures and their weights.
 #[derive(Default)]
 pub struct OptimalityMeasures {
