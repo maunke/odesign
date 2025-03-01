@@ -1,0 +1,16 @@
+[package]
+name = "odesign_examples"
+version.workspace = true
+edition.workspace = true
+description.workspace = true
+repository.workspace = true
+keywords.workspace = true
+categories.workspace = true
+license.workspace = true
+
+[dependencies]
+nalgebra = { workspace = true }
+num-dual = { workspace = true }
+odesign = { path = "../odesign" }
+faer = { workspace = true }
+faer-ext = { workspace = true }

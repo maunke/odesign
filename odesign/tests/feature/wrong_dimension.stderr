@@ -1,0 +1,53 @@
+error[E0308]: mismatched types
+ --> tests/feature/wrong_dimension.rs:5:10
+  |
+5 | #[derive(Feature)]
+  |          ^^^^^^^
+  |          |
+  |          expected `&Matrix<f64, Const<2>, ..., ...>`, found `&&Matrix<f64, Const<1>, ..., ...>`
+  |          arguments to this method are incorrect
+  |
+  = note: expected reference `&Matrix<f64, Const<2>, Const<1>, ArrayStorage<f64, 2, 1>>`
+             found reference `&&Matrix<f64, Const<1>, Const<1>, ArrayStorage<f64, 1, 1>>`
+note: method defined here
+ --> src/feature.rs
+  |
+  |     fn f<D: DualNum<f64>>(&self, x: &SVector<D, N>) -> D;
+  |        ^
+  = note: this error originates in the derive macro `Feature` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0308]: mismatched types
+ --> tests/feature/wrong_dimension.rs:5:10
+  |
+5 | #[derive(Feature)]
+  |          ^^^^^^^
+  |          |
+  |          expected `2`, found `1`
+  |          arguments to this method are incorrect
+  |
+  = note: expected reference `&Matrix<DualVec<f64, f64, Const<1>>, Const<2>, Const<1>, ArrayStorage<DualVec<f64, f64, Const<1>>, 2, 1>>`
+             found reference `&Matrix<DualVec<f64, f64, Const<1>>, Const<1>, Const<1>, ArrayStorage<DualVec<f64, f64, Const<1>>, 1, 1>>`
+note: method defined here
+ --> src/feature.rs
+  |
+  |     fn f<D: DualNum<f64>>(&self, x: &SVector<D, N>) -> D;
+  |        ^
+  = note: this error originates in the derive macro `Feature` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0308]: mismatched types
+ --> tests/feature/wrong_dimension.rs:5:10
+  |
+5 | #[derive(Feature)]
+  |          ^^^^^^^
+  |          |
+  |          expected `2`, found `1`
+  |          arguments to this method are incorrect
+  |
+  = note: expected reference `&Matrix<Dual2Vec<f64, f64, Const<1>>, Const<2>, Const<1>, ArrayStorage<Dual2Vec<f64, f64, Const<1>>, 2, 1>>`
+             found reference `&Matrix<Dual2Vec<f64, f64, Const<1>>, Const<1>, Const<1>, ArrayStorage<Dual2Vec<f64, f64, Const<1>>, 1, 1>>`
+note: method defined here
+ --> src/feature.rs
+  |
+  |     fn f<D: DualNum<f64>>(&self, x: &SVector<D, N>) -> D;
+  |        ^
+  = note: this error originates in the derive macro `Feature` (in Nightly builds, run with -Z macro-backtrace for more info)

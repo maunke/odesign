@@ -1,0 +1,17 @@
+[package]
+name = "odesign_derive"
+version.workspace = true
+edition.workspace = true
+description.workspace = true
+repository.workspace = true
+keywords.workspace = true
+categories.workspace = true
+license.workspace = true
+
+[lib]
+proc-macro = true
+
+[dependencies]
+anyhow = "1.0.96"
+quote = "1.0.38"
+syn = "2.0.98"

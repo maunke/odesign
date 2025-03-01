@@ -1,0 +1,5 @@
+error: Missing #[dimension = <d>] attribute where d of type usize is equal to input dimension of feature function
+ --> tests/feature/dimension_type.rs:7:8
+  |
+7 | struct Monomial {
+  |        ^^^^^^^^

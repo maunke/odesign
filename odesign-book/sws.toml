@@ -1,0 +1,26 @@
+[general]
+
+log-level = "error"
+#### Cache Control headers
+cache-control-headers = true
+
+#### Auto Compression
+compression = true
+compression-level = "default"
+
+page404 = "./404.html"
+
+threads-multiplier = 1
+
+security-headers = true
+
+[[advanced.headers]]
+source = "**/*.{svg}"
+[advanced.headers.headers]
+Cache-Control = "public, max-age=31536000"
+
+
+[[advanced.headers]]
+source = "**/*.{css}"
+[advanced.headers.headers]
+Cache-Control = "public, max-age=86400"

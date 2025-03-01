@@ -1,0 +1,5 @@
+error: cannot find attribute `unknown_attribute` in this scope
+ --> tests/feature/attribute.rs:7:3
+  |
+7 | #[unknown_attribute = 42]
+  |   ^^^^^^^^^^^^^^^^^
