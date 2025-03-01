@@ -37,7 +37,12 @@ $$
 $$
 
 with n support vectors x and theirs weights w (see the
-[custom-optimality example here](https://git.sr.ht/~maunke/odesign/tree/main/item/odesign-examples/examples/custom-optimality/main.rs)).
+[custom-optimality example here](https://git.sr.ht/~maunke/odesign/tree/main/item/odesign-examples/examples/custom-optimality/main.rs))
+or run the following command:
+
+```bash
+cargo run --example custom-optimality --release
+```
 
 Since the solver minimizes the sum of negative log of the desired optimalities,
 we formulate the custom matrix means derivatives as follows:
