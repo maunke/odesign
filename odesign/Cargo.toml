@@ -9,15 +9,15 @@ categories.workspace = true
 license.workspace = true
 
 [dependencies]
-nalgebra = { workspace = true }
-num-dual = { workspace = true }
+aquamarine = { workspace = true }
 faer = { workspace = true }
 faer-ext = { workspace = true }
+katexit = { workspace = true }
+nalgebra = { workspace = true }
+num-dual = { workspace = true }
+odesign_derive = { path = "../odesign-derive"}
 rayon = "1.10.0"
 thiserror = { workspace = true }
-aquamarine = { workspace = true }
-katexit = { workspace = true }
-odesign_derive = { path = "../odesign-derive"}
 
 [dev-dependencies]
 rand = "0.9.0"

@@ -13,14 +13,13 @@ categories = ["science"]
 license = "MIT OR Apache-2.0"
 
 [workspace.dependencies]
+aquamarine = "0.6.0"
+faer = "0.20.2"
+faer-ext = { version = "0.4.1", features = ["nalgebra"] }
+katexit = "0.1.4"
 nalgebra = "0.33.2"
 num-dual = "0.11.0"
 thiserror = "2.0.11"
-faer = "0.20.2"
-faer-ext = { version = "0.4.1", features = ["nalgebra"]}
-aquamarine = "0.6.0"
-katexit = "0.1.4"
-
 
 [profile.release]
 opt-level = 3

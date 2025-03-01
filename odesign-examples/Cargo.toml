@@ -9,8 +9,8 @@ categories.workspace = true
 license.workspace = true
 
 [dependencies]
+faer = { workspace = true }
+faer-ext = { workspace = true }
 nalgebra = { workspace = true }
 num-dual = { workspace = true }
 odesign = { path = "../odesign" }
-faer = { workspace = true }
-faer-ext = { workspace = true }
