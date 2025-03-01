@@ -1,5 +1,5 @@
 [package]
-name = "odesign_derive"
+name = "odesign-derive"
 version.workspace = true
 edition.workspace = true
 description.workspace = true
