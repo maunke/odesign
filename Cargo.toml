@@ -11,6 +11,7 @@ repository = "https://git.sr.ht/~maunke/odesign"
 keywords = ["sffs", "statistics", "feature-selection", "optimal-design"]
 categories = ["science"]
 license = "MIT OR Apache-2.0"
+homepage = "https://odesign.rs"
 
 [workspace.dependencies]
 aquamarine = "0.6.0"
