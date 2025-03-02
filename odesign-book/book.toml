@@ -1,5 +1,5 @@
 [book]
-authors = ["Markus Unkel <markus@unkel.io"]
+authors = ["Markus Unkel <markus@unkel.io>"]
 language = "en"
 multilingual = false
 src = "src"
