@@ -1,0 +1,16 @@
+image: archlinux
+packages:
+  - just
+  - rustup
+  - cargo-binstall
+sources:
+  - "https://git.sr.ht/~maunke/odesign"
+tasks:
+  - setup: |
+      rustup toolchain install stable  
+      rustup default stable
+      rustup component add clippy rustfmt
+      cargo binstall --no-confirm cargo-nextest
+  - test: | 
+      cd odesign
+      just test-all
