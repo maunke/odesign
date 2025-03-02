@@ -251,7 +251,6 @@ impl NLPSolver {
             x = self.newton_method(x, t, t0);
             t *= self.options.barrier_mu;
         }
-        // println!("Barrier iterations: {}", i);
         x.as_ref().into_nalgebra().column(0).into()
     }
 
@@ -303,10 +302,6 @@ impl NLPSolver {
 
             self.backline_search(&mut x, dx, &mut backline_exceeded, func_val);
         }
-        // let func_val = self.func.val(&x);
-        // println!("{func_val}");
-        // println!("{:?}", ((-func_val).exp()).powf(1. / 6.));
-        // println!("Newton iterations: {}", i);
         x
     }
 
@@ -525,7 +520,6 @@ mod tests {
         let solver = NLPSolver::new(options, constraints, nlp_target);
         let x0 = DVector::from_vec(vec![2.9]);
         let x_min = solver.minimize(x0.clone());
-        println!("{:?}", x_min);
         assert!(x_min.relative_eq(&x0, 1e-4, 1e-4));
         Ok(())
     }
@@ -586,7 +580,6 @@ mod tests {
 
             let solver = NLPSolver::new(options, constraints, nlp_target);
             let x_min = solver.minimize(x0);
-            println!("{:?}", x_min);
             assert!(x_min.relative_eq(
                 &DVector::from_vec(vec![(voronoi_lower + 0.5) / 2.]),
                 1e-4,
