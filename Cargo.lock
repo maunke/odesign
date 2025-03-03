@@ -725,7 +725,7 @@ dependencies = [
 
 [[package]]
 name = "odesign"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "aquamarine",
  "faer",
@@ -742,7 +742,7 @@ dependencies = [
 
 [[package]]
 name = "odesign-derive"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "anyhow",
  "quote",
@@ -751,7 +751,7 @@ dependencies = [
 
 [[package]]
 name = "odesign-examples"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "faer",
  "faer-ext",
