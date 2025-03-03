@@ -1,4 +1,4 @@
-use faer::{prelude::SpSolver, unzipped, zipped, Mat};
+use faer::{linalg::solvers::Solve, unzip, zip, Mat};
 use faer_ext::{IntoFaer, IntoNalgebra};
 use nalgebra::{DMatrix, DVector};
 use std::sync::Arc;
@@ -384,15 +384,15 @@ impl NLPSolver {
     #[inline(always)]
     fn log_barrier_bound_grad_hes(&self, x: &Mat<f64>, bound: &NLPBound) -> (Mat<f64>, Mat<f64>) {
         let mut grad = Mat::<f64>::zeros(x.nrows(), 1);
-        zipped!(&mut grad, x, &bound.lower, &bound.upper)
-            .for_each(|unzipped!(g, v, l, u)| *g = 1.0 / (*u - *v) + 1.0 / (*l - *v));
+        zip!(&mut grad, x, &bound.lower, &bound.upper)
+            .for_each(|unzip!(g, v, l, u)| *g = 1.0 / (*u - *v) + 1.0 / (*l - *v));
         let mut hes = Mat::<f64>::zeros(x.nrows(), x.nrows());
         for j in 0..hes.ncols() {
             for i in 0..hes.nrows() {
                 if i == j {
-                    let v = 1.0 / ((bound.upper.read(i, 0) - x.read(i, 0)).powi(2))
-                        + 1.0 / (bound.lower.read(i, 0) - x.read(i, 0)).powi(2);
-                    hes.write(i, i, v);
+                    let v = 1.0 / (bound.upper[(i, 0)] - x[(i, 0)]).powi(2)
+                        + 1.0 / (bound.lower[(i, 0)] - x[(i, 0)]).powi(2);
+                    hes[(i, i)] = v;
                 }
             }
         }

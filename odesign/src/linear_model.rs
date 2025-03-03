@@ -1,5 +1,5 @@
 use crate::{Feature, MatrixDRows};
-use faer::{prelude::SpSolver, Mat};
+use faer::{linalg::solvers::Solve, Mat};
 use faer_ext::{IntoFaer, IntoNalgebra};
 use nalgebra::{DVector, SMatrix, SVector};
 use std::sync::Arc;
@@ -170,7 +170,7 @@ impl<const D: usize> LinearModel<D> {
             .for_each(|(j, mut col)| {
                 let x = data.column(j).into();
                 for i in 0..col.nrows() {
-                    col.write(i, self.features[i].val(&x));
+                    col[i] = self.features[i].val(&x);
                 }
             });
         design_t

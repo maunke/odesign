@@ -1,5 +1,5 @@
 use crate::{Error, IntoSVector, LinearModel, MatrixDRows, NLPFunctionTarget, Optimality, Result};
-use faer::{prelude::SpSolver, Mat};
+use faer::{linalg::solvers::Solve, Mat};
 use faer_ext::IntoFaer;
 use nalgebra::{DVector, SVector};
 use std::sync::Arc;
@@ -115,8 +115,8 @@ impl<const D: usize> NLPFunctionTarget for CMatrixMeans<D> {
         let factor = -1. / phi;
         let mut grad = Mat::<f64>::zeros(x.nrows(), 1);
         for row in 0..grad.nrows() {
-            let v = theta.read(row, 0);
-            grad.write(row, 0, factor * v * v);
+            let v = theta[(row, 0)];
+            grad[(row, 0)] = factor * v * v;
         }
         (val, grad)
     }
@@ -128,8 +128,8 @@ impl<const D: usize> NLPFunctionTarget for CMatrixMeans<D> {
         let factor = -1. / phi;
         let mut grad = Mat::<f64>::zeros(x.nrows(), 1);
         for row in 0..grad.nrows() {
-            let v = theta.read(row, 0);
-            grad.write(row, 0, factor * v * v);
+            let v = theta[(row, 0)];
+            grad[(row, 0)] = factor * v * v;
         }
         let factor = 2. / phi;
         let theta_outer = factor * theta.col(0) * theta.col(0).transpose();
@@ -137,9 +137,9 @@ impl<const D: usize> NLPFunctionTarget for CMatrixMeans<D> {
         let mut hes = &self.design * fim.partial_piv_lu().solve(&self.design_t);
         for col in 0..hes.ncols() {
             for row in 0..hes.nrows() {
-                let v = hes.read(row, col);
-                let t_v = theta_outer.read(row, col);
-                hes.write(row, col, v * t_v);
+                let v = hes[(row, col)];
+                let t_v = theta_outer[(row, col)];
+                hes[(row, col)] = v * t_v;
             }
         }
         hes += grad_outer;

@@ -12,7 +12,7 @@ pub trait IntoSVector<const D: usize> {
 
 impl<const D: usize> IntoSVector<D> for &Mat<f64> {
     fn into_svector(self) -> SVector<f64, D> {
-        let x_slice = self.col(0).subrows(0, D).try_as_slice().unwrap();
+        let x_slice = &self.col_as_slice(0)[0..D];
         SVector::from_row_slice(x_slice)
     }
 }

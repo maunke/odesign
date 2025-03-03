@@ -60,7 +60,7 @@ impl<const D: usize> CostsMatrixMean<D> {
         let mut supp_norm_l2 = Mat::<f64>::zeros(supp.ncols(), 1);
         supp.column_iter().enumerate().for_each(|(idx, c)| {
             let value = c.norm_squared();
-            supp_norm_l2.write(idx, 0, value);
+            supp_norm_l2[(idx, 0)] = value;
         });
         Self { supp_norm_l2 }
     }
@@ -92,11 +92,11 @@ struct CostsDispersionFunction {
 
 impl CostsDispersionFunction {
     fn new(weights: Mat<f64>, x_id: usize, dim: usize) -> Self {
-        let weight = weights.read(x_id, 0);
+        let weight = weights[(x_id, 0)];
         let weight_factor = 2. * weight;
         let mut weight_factor_mat = Mat::<f64>::zeros(dim, dim);
         for i in 0..dim {
-            weight_factor_mat.write(i, i, weight_factor);
+            weight_factor_mat[(i, i)] = weight_factor;
         }
         Self {
             weight,
@@ -108,7 +108,7 @@ impl CostsDispersionFunction {
 
 impl NLPFunctionTarget for CostsDispersionFunction {
     fn val(&self, x: &Mat<f64>) -> f64 {
-        self.weight * x.squared_norm_l2()
+        self.weight * x.as_ref().squared_norm_l2()
     }
 
     fn val_grad(&self, x: &Mat<f64>) -> (f64, Mat<f64>) {

@@ -1,6 +1,8 @@
 use crate::{IntoSVector, LinearModel, MatrixDRows, NLPFunctionTarget, Optimality};
-use faer::sparse::solvers::PartialPivLu;
-use faer::{prelude::SpSolver, Mat};
+use faer::{
+    linalg::solvers::{PartialPivLu, Solve},
+    Mat,
+};
 use nalgebra::SVector;
 use std::sync::Arc;
 
@@ -94,8 +96,8 @@ impl<const D: usize> NLPFunctionTarget for DMatrixMean<D> {
         let val = -det.ln();
         let mut grad = Mat::<f64>::zeros(phi.nrows(), 1);
         for row in 0..grad.nrows() {
-            let v = phi.read(row, row);
-            grad.write(row, 0, -v);
+            let v = phi[(row, row)];
+            grad[(row, 0)] = -v;
         }
         (val, grad)
     }
@@ -107,14 +109,14 @@ impl<const D: usize> NLPFunctionTarget for DMatrixMean<D> {
         let val = -det.ln();
         let mut grad = Mat::<f64>::zeros(phi.nrows(), 1);
         for row in 0..grad.nrows() {
-            let v = phi.read(row, row);
-            grad.write(row, 0, -v);
+            let v = phi[(row, row)];
+            grad[(row, 0)] = -v;
         }
         let mut hes = Mat::<f64>::zeros(phi.nrows(), phi.ncols());
         for col in 0..phi.ncols() {
             for row in 0..phi.nrows() {
-                let v = phi.read(row, col);
-                hes.write(row, col, v * v);
+                let v = phi[(row, col)];
+                hes[(row, col)] = v * v;
             }
         }
 
