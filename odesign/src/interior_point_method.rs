@@ -296,7 +296,7 @@ impl NLPSolver {
             b.as_mut()
                 .submatrix_mut(0, 0, x_size, 1)
                 .copy_from(func_grad);
-            let dx_total = a.partial_piv_lu().solve(&b);
+            let dx_total = a.lblt(faer::Side::Lower).solve(&b);
             let dx = dx_total.submatrix(0, 0, x_size, 1).to_owned();
             crit = dx.norm_l2();
 
