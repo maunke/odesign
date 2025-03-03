@@ -16,7 +16,7 @@ faer-ext = { workspace = true }
 katexit = { workspace = true }
 nalgebra = { workspace = true }
 num-dual = { workspace = true }
-odesign-derive = { path = "../odesign-derive", version = "0.1.0" }
+odesign-derive = { path = "../odesign-derive", version = "0.1.1" }
 rayon = "1.10.0"
 thiserror = { workspace = true }
 
