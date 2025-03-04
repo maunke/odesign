@@ -114,7 +114,7 @@ impl<const D: usize> NLPFunctionTarget for DMatrixMean<D> {
         }
         let mut hes = Mat::<f64>::zeros(phi.nrows(), phi.ncols());
         for col in 0..phi.ncols() {
-            for row in 0..phi.nrows() {
+            for row in col..phi.nrows() {
                 let v = phi[(row, col)];
                 hes[(row, col)] = v * v;
             }

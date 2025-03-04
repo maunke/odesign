@@ -387,14 +387,10 @@ impl NLPSolver {
         zip!(&mut grad, x, &bound.lower, &bound.upper)
             .for_each(|unzip!(g, v, l, u)| *g = 1.0 / (*u - *v) + 1.0 / (*l - *v));
         let mut hes = Mat::<f64>::zeros(x.nrows(), x.nrows());
-        for j in 0..hes.ncols() {
-            for i in 0..hes.nrows() {
-                if i == j {
-                    let v = 1.0 / (bound.upper[(i, 0)] - x[(i, 0)]).powi(2)
-                        + 1.0 / (bound.lower[(i, 0)] - x[(i, 0)]).powi(2);
-                    hes[(i, i)] = v;
-                }
-            }
+        for i in 0..hes.nrows() {
+            let v = 1.0 / (bound.upper[(i, 0)] - x[(i, 0)]).powi(2)
+                + 1.0 / (bound.lower[(i, 0)] - x[(i, 0)]).powi(2);
+            hes[(i, i)] = v;
         }
         (grad, hes)
     }

@@ -136,7 +136,7 @@ impl<const D: usize> NLPFunctionTarget for CMatrixMeans<D> {
         let grad_outer = grad.col(0) * grad.col(0).transpose();
         let mut hes = &self.design * fim.partial_piv_lu().solve(&self.design_t);
         for col in 0..hes.ncols() {
-            for row in 0..hes.nrows() {
+            for row in col..hes.nrows() {
                 let v = hes[(row, col)];
                 let t_v = theta_outer[(row, col)];
                 hes[(row, col)] = v * t_v;
