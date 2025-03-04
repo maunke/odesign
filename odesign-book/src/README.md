@@ -4,11 +4,13 @@
 allows to find optimal designs for (quasi-) linear models considering arbitrary
 optimalities.
 
-This book serves as a high level introduction and theoretical background. Please
-take a look at the docs on [docs.rs/odesign](https://docs.rs/odesign) for the
-implementation details. The project is available at sourcehut
-[https://sr.ht/~maunke/odesign](https://sr.ht/~maunke/odesign) and a read-only
-mirror on github [maunke/odesign](https://github.com/maunke/odesign).
+This book serves as a high level introduction and theoretical background.
+
+Please find more resources here:
+
+- docs on [docs.rs/odesign](https://docs.rs/odesign)
+- project on sourcehut [sr.ht/~maunke/odesign](https://sr.ht/~maunke/odesign)
+- read-only mirror on github [maunke/odesign](https://github.com/maunke/odesign)
 
 ## Use Cases
 
