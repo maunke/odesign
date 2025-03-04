@@ -143,7 +143,7 @@ fn main() -> Result<()> {
     let optimalities_weights = vec![1., 10.];
     let lower = Vector1::new(-1.0);
     let upper = Vector1::new(1.0);
-    let q: SVector<usize, 1> = Vector1::new(11);
+    let q = Vector1::new(11);
 
     // define Optimal Design resolver
     let mut od = OptimalDesign::new()

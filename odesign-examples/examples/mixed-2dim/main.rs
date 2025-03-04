@@ -66,7 +66,7 @@ fn main() -> Result<()> {
 
     let lm = LinearModel::new(fs.features);
 
-    let q: SVector<usize, 2> = Vector2::new(21, 21);
+    let q = Vector2::new(21, 21);
     let lower = Vector2::new(-1., -1.);
     let upper = Vector2::new(1., 1.);
     let optimality = Arc::new(DOptimality::new(lm.into()));

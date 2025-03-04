@@ -52,7 +52,7 @@ fn main() -> Result<()> {
     let optimality = Arc::new(DOptimality::new(lm.into()));
     let lower = Vector1::new(0.5);
     let upper = Vector1::new(2.5);
-    let q: SVector<usize, 1> = Vector1::new(101);
+    let q = Vector1::new(101);
 
     // define Optimal Design resolver
     let mut od = OptimalDesign::new()
