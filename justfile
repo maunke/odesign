@@ -24,8 +24,8 @@ book-build-tar: book-build
 book-watch:
   mdbook watch odesign-book --open
 
-book-publish:
-  caprover deploy -t ./deploy.tar
+book-publish: book-build-tar
+  caprover deploy -t ./deploy.tar -a odesign
 
 run-all-examples:
   #!/bin/sh
