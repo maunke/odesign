@@ -8,6 +8,7 @@ keywords.workspace = true
 categories.workspace = true
 license.workspace = true
 homepage.workspace = true
+readme = "../README.md"
 
 [lib]
 proc-macro = true
