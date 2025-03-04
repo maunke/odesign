@@ -23,3 +23,12 @@ book-build-tar: book-build
 
 book-publish:
   caprover deploy -t ./deploy.tar
+
+run-all-examples:
+  #!/bin/sh
+  for dir in ./odesign-examples/examples/*/
+  do
+    dir=${dir%*/}
+    example=${dir##*/}
+    cargo run --example $example --release
+  done
