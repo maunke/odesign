@@ -71,3 +71,13 @@ fn main() -> Result<()> {
 // Iterations: 1
 // ----------------------------
 ```
+
+## Mailings Lists
+
+- [odesign-announce](https://lists.sr.ht/~maunke/odesign-announce): Low-volume
+  mailing list for announcements
+- [odesign-discuss](https://lists.sr.ht/~maunke/odesign-discuss): Mailing list
+  for end-user discussion and questions
+- [odesign-devel](https://lists.sr.ht/~maunke/odesign-devel): Mailing list for
+  development discussion and patches. For help sending patches to this list,
+  please consult [git-send-email.io](https://git-send-email.io).
