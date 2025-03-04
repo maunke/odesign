@@ -21,6 +21,9 @@ book-build:
 book-build-tar: book-build
   tar --exclude='./odesign-book/src/' -cf ./deploy.tar ./captain-definition ./odesign-book/*
 
+book-watch:
+  mdbook watch odesign-book --open
+
 book-publish:
   caprover deploy -t ./deploy.tar
 
