@@ -107,9 +107,20 @@ fn main() -> Result<()> {
 
 ## Roadmap
 
-- [ ] Documentation of the optimal design solver backed by "Adaptive grid
-      Semidefinite Programming for finding optimal designs" (doi:
-      [10.1007/s11222-017-9741-y](https://doi.org/10.1007/s11222-017-9741-y))
-- [ ] New optimal design feature selection algorithm, a mixture of SFFS, D-, C-
-      and Measurements-Costs-Optimality, allowing to perform model feature
-      selection and measurements alternating
+- Optimalities:
+  - [x] D-Optimality
+  - [x] C-Optimality
+  - [x] Custom Optimality
+  - [ ] A-Optimality
+  - [ ] Costs Optimality
+- Design Bounds:
+  - [x] Cubic Bounds
+  - [ ] Custom Bounds
+- Documentation:
+  - [ ] documentation of the optimal design solver backed by "adaptive grid
+        semidefinite programming for finding optimal designs" (doi:
+        [10.1007/s11222-017-9741-y](https://doi.org/10.1007/s11222-017-9741-y))
+- Research:
+  - [ ] New optimal design feature selection algorithm, a mixture of SFFS, D-,
+        C- and Measurements-Costs-Optimality, allowing to perform model feature
+        selection and measurements alternating
