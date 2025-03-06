@@ -55,7 +55,6 @@ pub struct DMatrixMean<const D: usize> {
     linear_model: Arc<LinearModel<D>>,
     design_t: Mat<f64>,
     design: Mat<f64>,
-    supp: Arc<MatrixDRows<D>>,
 }
 
 impl<const D: usize> DMatrixMean<D> {
@@ -66,18 +65,17 @@ impl<const D: usize> DMatrixMean<D> {
             linear_model,
             design_t,
             design,
-            supp,
         }
     }
     #[inline(always)]
     fn fim_det(&self, x: &Mat<f64>) -> (Mat<f64>, f64) {
-        let fim = self.linear_model.fim(&self.supp, x);
+        let fim = self.linear_model.fim_from_design_t(&self.design_t, x);
         let det = fim.determinant();
         (fim, det)
     }
     #[inline(always)]
     fn phi(&self, fim: Mat<f64>) -> Mat<f64> {
-        let s = fim.partial_piv_lu().solve(&self.design_t);
+        let s = fim.llt(faer::Side::Lower).unwrap().solve(&self.design_t);
         &self.design * s
     }
 }

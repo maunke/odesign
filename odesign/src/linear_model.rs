@@ -189,6 +189,18 @@ impl<const D: usize> LinearModel<D> {
         fim
     }
 
+    /// Returns the normed global fisher information matrix $\mathcal{M} = \sum_{i=1}^{|D|} w_i \cdot
+    /// \phi(x^{(i)}) \phi(x^{(i)})^T$ with a given dataset $D \in \mathbb R^{m \times
+    /// |D|}$ and weights $w \in \mathbb R^{|D|}$.
+    pub fn fim_from_design_t(&self, design_t: &Mat<f64>, weights: &Mat<f64>) -> Mat<f64> {
+        let no_features = self.features.len();
+        let mut fim = Mat::<f64>::zeros(no_features, no_features);
+        for (c_idx, w) in weights.col(0).iter().enumerate() {
+            fim += *w * design_t.col(c_idx) * design_t.col(c_idx).transpose();
+        }
+        fim
+    }
+
     /// Returns the transposed jacobian matrix $J^T \in \mathbb R^{m \times n}$, where $J_{ij}(x) = (\nabla \phi_j(x))_i$.
     pub fn jac_t(&self, x: &SVector<f64, D>) -> Mat<f64> {
         let mut m = Mat::<f64>::zeros(D, self.features.len());
@@ -305,6 +317,20 @@ mod tests {
         let data = MatrixDRows::from_vec(vec![1., 1., 2., 2.]);
         let weights = mat![[2.], [2.]];
         let fim = polynomial.fim(&data, &weights);
+        assert_eq!(
+            fim,
+            mat![[4., 10., 34.], [10., 34., 130.], [34., 130., 514.]]
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn fisher_information_matrix_from_design() -> Result<()> {
+        let polynomial = get_polynomial();
+        let data = MatrixDRows::from_vec(vec![1., 1., 2., 2.]);
+        let design_t = polynomial.design_t(&data);
+        let weights = mat![[2.], [2.]];
+        let fim = polynomial.fim_from_design_t(&design_t, &weights);
         assert_eq!(
             fim,
             mat![[4., 10., 34.], [10., 34., 130.], [34., 130., 514.]]
