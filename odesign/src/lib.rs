@@ -21,5 +21,7 @@ pub use odesign_derive::Feature;
 pub use optimal_design::{
     Design, DesignBound, DesignConstraint, OptimalDesign, OptimalDesignCriteria,
 };
-pub use optimality::{COptimality, DOptimality, Optimalities, Optimality, OptimalityMeasures};
+pub use optimality::{
+    AOptimality, COptimality, DOptimality, Optimalities, Optimality, OptimalityMeasures,
+};
 pub use utils::{IntoSVector, MatrixDRows};

@@ -1,6 +1,8 @@
+mod a_opt;
 mod c_opt;
 mod d_opt;
 use crate::{MatrixDRows, NLPFunctionTarget};
+pub use a_opt::AOptimality;
 pub use c_opt::COptimality;
 pub use d_opt::DOptimality;
 use faer::Mat;

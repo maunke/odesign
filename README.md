@@ -111,7 +111,7 @@ fn main() -> Result<()> {
   - [x] D-Optimality
   - [x] C-Optimality
   - [x] Custom Optimality
-  - [ ] A-Optimality
+  - [x] A-Optimality
   - [ ] Costs Optimality
 - Design Bounds:
   - [x] Cubic Bounds

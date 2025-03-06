@@ -1,8 +1,9 @@
 use nalgebra::{DVector, SVector, Vector1};
 use num_dual::*;
 use odesign::{
-    COptimality, DOptimality, Design, DesignBound, Feature, FeatureFunction, FeatureSet, Grid,
-    LinearModel, MatrixDRows, OptimalDesign, OptimalDesignCriteria, Optimality, Result,
+    AOptimality, COptimality, DOptimality, Design, DesignBound, Feature, FeatureFunction,
+    FeatureSet, Grid, LinearModel, MatrixDRows, OptimalDesign, OptimalDesignCriteria, Optimality,
+    Result,
 };
 use std::sync::Arc;
 
@@ -146,6 +147,37 @@ fn test_optimal_design_ccrit() -> Result<()> {
     let design = od.solve();
 
     let weights_rslt = DVector::from_vec(vec![0.25, 0.50, 0.25]);
+    let supp_rslt = MatrixDRows::from_vec(vec![-1., 0., 1.]);
+
+    assert!(design
+        .weights
+        .relative_eq(&weights_rslt, EQ_EPS, EQ_MAX_REL));
+    assert!(design.supp.relative_eq(&supp_rslt, EQ_EPS, EQ_MAX_REL));
+    Ok(())
+}
+
+#[test]
+fn test_optimal_design_acrit_poly_1() -> Result<()> {
+    let mut fs = FeatureSet::new();
+    for i in 0..3 {
+        let c: Arc<_> = Monomial { i }.into();
+        fs.push(c);
+    }
+
+    let lm = LinearModel::new(fs.features);
+
+    let q: SVector<usize, 1> = Vector1::new(11);
+    let lower = Vector1::new(-1.);
+    let upper = Vector1::new(1.);
+    let optimality = Arc::new(AOptimality::new(lm.into()));
+    let grid = Grid::new(lower, upper, q)?;
+    let mut od = OptimalDesign::new()
+        .with_optimality(optimality)
+        .with_bound_args(lower, upper)?
+        .with_init_design_grid(grid);
+    let design = od.solve();
+
+    let weights_rslt = DVector::from_vec(vec![0.25, 0.5, 0.25]);
     let supp_rslt = MatrixDRows::from_vec(vec![-1., 0., 1.]);
 
     assert!(design
