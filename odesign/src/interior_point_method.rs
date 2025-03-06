@@ -134,11 +134,11 @@ impl Default for NLPSolverOptions {
             newton_prec: 1e-6,
             barrier_max_iter: 1_000,
             newton_max_iter: 1_000,
-            backline_max_iter: 10,
+            backline_max_iter: 100,
             barrier_mu: 5.,
-            barrier_t0: 100.,
-            backline_a: 0.2,
-            backline_b: 0.1,
+            barrier_t0: 50.,
+            backline_a: 0.8,
+            backline_b: 0.8,
         }
     }
 }
@@ -243,21 +243,19 @@ impl NLPSolver {
     fn barrier_method(&self, x: DVector<f64>) -> DVector<f64> {
         let mut x = x.view_range(.., ..).into_faer().to_owned();
         let x_size = x.nrows() as f64;
-        let t0 = 200_f64.max((self.options.barrier_t0 * x_size.sqrt()).min(5e3));
+        let t0 = self.options.barrier_t0;
         let mut t = t0;
         let mut i = 0;
         while i < self.options.barrier_max_iter && x_size / t >= self.options.barrier_prec {
             i += 1;
-            x = self.newton_method(x, t, t0);
+            x = self.newton_method(x, t);
             t *= self.options.barrier_mu;
         }
         x.as_ref().into_nalgebra().column(0).into()
     }
 
-    fn newton_method(&self, mut x: Mat<f64>, t: f64, t0: f64) -> Mat<f64> {
+    fn newton_method(&self, mut x: Mat<f64>, t: f64) -> Mat<f64> {
         let x_size = x.nrows();
-        let iter_barrier = (t / t0 / self.options.barrier_mu) as i32;
-
         let mut a = match &self.pre_computation.lin_equal_newton_mat {
             Some(lin_equal_newton_mat) => lin_equal_newton_mat.clone(),
             None => Mat::<f64>::zeros(x_size, x_size),
@@ -270,8 +268,7 @@ impl NLPSolver {
         let mut backline_exceeded: bool = false;
 
         while i < self.options.newton_max_iter
-            && (i == 0
-                || crit >= self.options.newton_prec * 1_f64.max(1e4 * 2_f64.powi(-iter_barrier)))
+            && (i == 0 || crit >= self.options.newton_prec)
             && !backline_exceeded
         {
             i += 1;
@@ -352,8 +349,31 @@ impl NLPSolver {
     #[inline(always)]
     fn feasibility_check(&self, x: &Mat<f64>) -> bool {
         if let Some(bound) = &self.constraints.bound {
-            return !(self.mat_min(&(x - &bound.lower)) < 0.
-                || self.mat_min(&(&bound.upper - x)) < 0.);
+            if self.mat_min(&(x - &bound.lower)) < 0. || self.mat_min(&(&bound.upper - x)) < 0. {
+                return false;
+            }
+        }
+        if let Some(inequal) = &self.constraints.inequal {
+            match inequal {
+                InequalityConstraint::Voronoi(c) => {
+                    let v = c.val(x);
+                    if v.is_nan() {
+                        return false;
+                    }
+                }
+                InequalityConstraint::Custom(f) => {
+                    let v = f.val(x);
+                    if v.is_nan() || v > 0. {
+                        return false;
+                    }
+                }
+                InequalityConstraint::CustomLogBarrier(f) => {
+                    let v = f.val(x);
+                    if v.is_nan() {
+                        return false;
+                    }
+                }
+            }
         }
         true
     }
