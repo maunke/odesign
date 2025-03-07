@@ -1,6 +1,6 @@
 test:
   echo "Run tests.."
-  cargo nextest run
+  cargo nextest run --release
 
 format-check:
   echo "Run format check.."

@@ -32,7 +32,7 @@ fn test_optimal_design_cdcrit_poly_2() -> Result<()> {
 
     let lm: Arc<_> = LinearModel::new(fs.features).into();
 
-    let q: SVector<usize, 1> = Vector1::new(41);
+    let q: SVector<usize, 1> = Vector1::new(101);
     let lower = Vector1::new(-1.);
     let upper = Vector1::new(1.);
     let d_opt = Arc::new(DOptimality::new(lm.clone()));
@@ -72,7 +72,7 @@ fn test_optimal_design_dcrit_poly_3() -> Result<()> {
 
     let lm = LinearModel::new(fs.features);
 
-    let q: SVector<usize, 1> = Vector1::new(41);
+    let q: SVector<usize, 1> = Vector1::new(101);
     let lower = Vector1::new(-1.);
     let upper = Vector1::new(1.);
     let optimality = Arc::new(DOptimality::new(lm.into()));
@@ -103,7 +103,7 @@ fn test_optimal_design_dcrit_poly_1() -> Result<()> {
 
     let lm = LinearModel::new(fs.features);
 
-    let q: SVector<usize, 1> = Vector1::new(11);
+    let q: SVector<usize, 1> = Vector1::new(101);
     let lower = Vector1::new(-1.);
     let upper = Vector1::new(1.);
     let optimality = Arc::new(DOptimality::new(lm.into()));
@@ -134,7 +134,7 @@ fn test_optimal_design_ccrit() -> Result<()> {
 
     let lm = LinearModel::new(fs.features);
 
-    let q: SVector<usize, 1> = Vector1::new(41);
+    let q: SVector<usize, 1> = Vector1::new(101);
     let lower = Vector1::new(-1.);
     let upper = Vector1::new(1.);
     let c = DVector::from_vec(vec![0., 0., 1.]);
@@ -166,7 +166,7 @@ fn test_optimal_design_acrit_poly_1() -> Result<()> {
 
     let lm = LinearModel::new(fs.features);
 
-    let q: SVector<usize, 1> = Vector1::new(11);
+    let q: SVector<usize, 1> = Vector1::new(101);
     let lower = Vector1::new(-1.);
     let upper = Vector1::new(1.);
     let optimality = Arc::new(AOptimality::new(lm.into()));
