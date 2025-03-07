@@ -30,9 +30,8 @@ level introduction and theoretical background and at the docs on
 
 ### Tickets
 
-The tracker on
-[sr.ht/~maunke/odesign/trackers](https://sr.ht/~maunke/odesign/trackers) is for
-confirmed bugs and confirmed feature requests only.
+The tracker on [todo.sr.ht/~maunke/odesign](https://todo.sr.ht/~maunke/odesign)
+is for confirmed bugs and confirmed feature requests only.
 
 Before creating a ticket, search for existing (possibly already fixed) issues,
 on the docs or in the mailing list archives: odesign-discuss, odesign-devel.
