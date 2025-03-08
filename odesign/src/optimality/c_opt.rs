@@ -1,5 +1,5 @@
 use crate::{Error, IntoSVector, LinearModel, MatrixDRows, NLPFunctionTarget, Optimality, Result};
-use faer::{linalg::solvers::Solve, Mat};
+use faer::{Mat, linalg::solvers::Solve};
 use faer_ext::IntoFaer;
 use nalgebra::{DVector, SVector};
 use std::sync::Arc;
@@ -224,7 +224,7 @@ impl<const D: usize> NLPFunctionTarget for CDispersionFunction<D> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{assert_nlp_target_consistency, Feature, FeatureFunction, Result};
+    use crate::{Feature, FeatureFunction, Result, assert_nlp_target_consistency};
     use nalgebra::SVector;
     use num_dual::DualNum;
 

@@ -1,5 +1,5 @@
 use quote::quote;
-use syn::{parse_macro_input, DeriveInput};
+use syn::{DeriveInput, parse_macro_input};
 
 #[proc_macro_derive(Feature, attributes(dimension))]
 pub fn derive_feature(input: proc_macro::TokenStream) -> proc_macro::TokenStream {

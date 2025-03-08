@@ -54,9 +54,11 @@ fn test_optimal_design_cdcrit_poly_2() -> Result<()> {
     let weights_rslt = DVector::from_vec(vec![0.3, 0.4, 0.3]);
     let supp_rslt = MatrixDRows::from_vec(vec![-1., 0., 1.]);
 
-    assert!(design
-        .weights
-        .relative_eq(&weights_rslt, EQ_EPS, EQ_MAX_REL));
+    assert!(
+        design
+            .weights
+            .relative_eq(&weights_rslt, EQ_EPS, EQ_MAX_REL)
+    );
     assert!(design.supp.relative_eq(&supp_rslt, EQ_EPS, EQ_MAX_REL));
     Ok(())
 }
@@ -86,9 +88,11 @@ fn test_optimal_design_dcrit_poly_3() -> Result<()> {
     let weights_rslt = DVector::from_element(4, 0.25);
     let supp_rslt = MatrixDRows::from_vec(vec![-1., -0.45, 0.45, 1.]);
 
-    assert!(design
-        .weights
-        .relative_eq(&weights_rslt, EQ_EPS, EQ_MAX_REL));
+    assert!(
+        design
+            .weights
+            .relative_eq(&weights_rslt, EQ_EPS, EQ_MAX_REL)
+    );
     assert!(design.supp.relative_eq(&supp_rslt, EQ_EPS, EQ_MAX_REL));
     Ok(())
 }
@@ -117,9 +121,11 @@ fn test_optimal_design_dcrit_poly_1() -> Result<()> {
     let weights_rslt = DVector::from_element(2, 0.5);
     let supp_rslt = MatrixDRows::from_vec(vec![-1., 1.]);
 
-    assert!(design
-        .weights
-        .relative_eq(&weights_rslt, EQ_EPS, EQ_MAX_REL));
+    assert!(
+        design
+            .weights
+            .relative_eq(&weights_rslt, EQ_EPS, EQ_MAX_REL)
+    );
     assert!(design.supp.relative_eq(&supp_rslt, EQ_EPS, EQ_MAX_REL));
     Ok(())
 }
@@ -149,9 +155,11 @@ fn test_optimal_design_ccrit() -> Result<()> {
     let weights_rslt = DVector::from_vec(vec![0.25, 0.50, 0.25]);
     let supp_rslt = MatrixDRows::from_vec(vec![-1., 0., 1.]);
 
-    assert!(design
-        .weights
-        .relative_eq(&weights_rslt, EQ_EPS, EQ_MAX_REL));
+    assert!(
+        design
+            .weights
+            .relative_eq(&weights_rslt, EQ_EPS, EQ_MAX_REL)
+    );
     assert!(design.supp.relative_eq(&supp_rslt, EQ_EPS, EQ_MAX_REL));
     Ok(())
 }
@@ -180,9 +188,11 @@ fn test_optimal_design_acrit_poly_1() -> Result<()> {
     let weights_rslt = DVector::from_vec(vec![0.25, 0.5, 0.25]);
     let supp_rslt = MatrixDRows::from_vec(vec![-1., 0., 1.]);
 
-    assert!(design
-        .weights
-        .relative_eq(&weights_rslt, EQ_EPS, EQ_MAX_REL));
+    assert!(
+        design
+            .weights
+            .relative_eq(&weights_rslt, EQ_EPS, EQ_MAX_REL)
+    );
     assert!(design.supp.relative_eq(&supp_rslt, EQ_EPS, EQ_MAX_REL));
     Ok(())
 }

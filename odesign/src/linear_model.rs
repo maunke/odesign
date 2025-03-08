@@ -1,5 +1,5 @@
 use crate::{Feature, MatrixDRows};
-use faer::{linalg::solvers::Solve, Mat};
+use faer::{Mat, linalg::solvers::Solve};
 use faer_ext::{IntoFaer, IntoNalgebra};
 use nalgebra::{DVector, SMatrix, SVector};
 use std::sync::Arc;

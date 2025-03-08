@@ -14,7 +14,9 @@ pub enum Error {
         ge_value: usize,
     },
     /// Minimal dimensional distance requirement is violated.
-    #[error("min distance between vectors {vector1} and {vector2} found on dim {dim} with {distance} but should > {gt_distance}")]
+    #[error(
+        "min distance between vectors {vector1} and {vector2} found on dim {dim} with {distance} but should > {gt_distance}"
+    )]
     MinDistanceBetweenVectors {
         /// Name of vector1.
         vector1: &'static str,

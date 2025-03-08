@@ -1,4 +1,4 @@
-use faer::{linalg::solvers::Solve, unzip, zip, Mat};
+use faer::{Mat, linalg::solvers::Solve, unzip, zip};
 use faer_ext::{IntoFaer, IntoNalgebra};
 use nalgebra::{DMatrix, DVector};
 use std::sync::Arc;

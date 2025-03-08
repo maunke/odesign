@@ -1,7 +1,7 @@
 use crate::{
-    interior_point_method::{InequalityConstraint, NLPBound, VoronoiConstraint},
     Error, Grid, LinearEqualityConstraint, MatrixDRows, NLPSolver, NLPSolverConstraints,
     NLPSolverOptions, Optimalities, Optimality, OptimalityMeasures, Result,
+    interior_point_method::{InequalityConstraint, NLPBound, VoronoiConstraint},
 };
 use faer_ext::IntoFaer;
 use nalgebra::{DMatrix, DVector, SVector};

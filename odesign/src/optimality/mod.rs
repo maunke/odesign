@@ -157,7 +157,7 @@ pub trait Optimality<const D: usize> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{assert_nlp_target_consistency, Result};
+    use crate::{Result, assert_nlp_target_consistency};
 
     struct DesignTest {}
 

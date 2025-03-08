@@ -1,7 +1,7 @@
 use crate::{IntoSVector, LinearModel, MatrixDRows, NLPFunctionTarget, Optimality};
 use faer::{
-    linalg::solvers::{PartialPivLu, Solve},
     Mat,
+    linalg::solvers::{PartialPivLu, Solve},
 };
 use nalgebra::SVector;
 use std::sync::Arc;
@@ -189,7 +189,7 @@ impl<const D: usize> NLPFunctionTarget for DDispersionFunction<D> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{assert_nlp_target_consistency, Feature, FeatureFunction, Result};
+    use crate::{Feature, FeatureFunction, Result, assert_nlp_target_consistency};
     use num_dual::DualNum;
 
     #[derive(Feature)]
