@@ -33,3 +33,8 @@ harness = false
 [[bench]]
 name = "d_opt_mixed_2dim"
 harness = false
+
+
+[[bench]]
+name = "a_opt_mixed_1dim"
+harness = false
