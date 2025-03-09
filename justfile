@@ -1,3 +1,6 @@
+bench:
+  cargo bench
+
 test:
   echo "Run tests.."
   cargo nextest run --release
@@ -35,3 +38,4 @@ run-all-examples:
     example=${dir##*/}
     cargo run --example $example --release
   done
+
