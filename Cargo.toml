@@ -4,7 +4,7 @@ resolver = "2"
 
 [workspace.package]
 authors = ["Markus Unkel <markus@unkel.io>"]
-version = "0.1.3"
+version = "0.1.4"
 edition = "2024"
 description = "odesign is an optimal design of experiments library written in pure rust."
 repository = "https://git.sr.ht/~maunke/odesign"
