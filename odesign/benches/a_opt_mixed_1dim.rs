@@ -65,7 +65,7 @@ fn mixed_1dim(size: usize) -> Result<()> {
 fn benchmark_mixed_1dim(c: &mut Criterion) {
     let mut group = c.benchmark_group("A-Optimality Mixed 1Dim");
     group.sample_size(10).warm_up_time(Duration::from_secs(1));
-    for size in (51..201).step_by(50) {
+    for size in (51..551).step_by(100) {
         group.bench_with_input(BenchmarkId::new("Grid size", size), &size, |b, &s| {
             b.iter(|| mixed_1dim(s));
         });
