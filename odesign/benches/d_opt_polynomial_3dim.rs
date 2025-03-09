@@ -53,7 +53,7 @@ fn polynomial_3dim(grid_size: usize) -> Result<()> {
 fn benchmark_poly_3dim(c: &mut Criterion) {
     let mut group = c.benchmark_group("D-Optimality Polynomial 3Dim");
     group.sample_size(10).warm_up_time(Duration::from_secs(1));
-    for size in (3..15).step_by(2) {
+    for size in (3..13).step_by(2) {
         group.bench_with_input(BenchmarkId::new("Grid size", size), &size, |b, &s| {
             b.iter(|| polynomial_3dim(s));
         });

@@ -83,7 +83,7 @@ fn mixed_2dim(size: usize) -> Result<()> {
 fn benchmark_mixed_2dim(c: &mut Criterion) {
     let mut group = c.benchmark_group("D-Optimality Mixed 2Dim");
     group.sample_size(10).warm_up_time(Duration::from_secs(1));
-    for size in (11..51).step_by(10) {
+    for size in (11..41).step_by(10) {
         group.bench_with_input(BenchmarkId::new("Grid size", size), &size, |b, &s| {
             b.iter(|| mixed_2dim(s));
         });
