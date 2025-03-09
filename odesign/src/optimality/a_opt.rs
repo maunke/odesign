@@ -112,10 +112,10 @@ impl<const D: usize> NLPFunctionTarget for MatrixMean<D> {
             let v = z_two[(row, row)];
             grad[(row, 0)] = v;
         }
-        let mut hes = Mat::<f64>::zeros(z_two.nrows(), z_two.ncols());
-        for col in 0..z_two.ncols() {
-            for row in col..z_two.nrows() {
-                let v1 = z_one[(row, col)];
+        let mut hes = z_one;
+        for col in 0..hes.ncols() {
+            for row in col..hes.nrows() {
+                let v1 = hes[(row, col)];
                 let v2 = z_two[(row, col)];
                 hes[(row, col)] = -2.0 * v1 * v2;
             }
