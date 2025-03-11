@@ -13,4 +13,4 @@ faer = { workspace = true }
 faer-ext = { workspace = true }
 nalgebra = { workspace = true }
 num-dual = { workspace = true }
-odesign = { path = "../odesign" }
+odesign = { workspace = true }
