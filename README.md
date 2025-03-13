@@ -114,7 +114,7 @@ fn main() -> Result<()> {
   - [ ] Costs Optimality
 - Design Bounds:
   - [x] Cubic Bounds
-  - [ ] Custom Bounds
+  - [x] Custom Bounds
 - Documentation:
   - [ ] documentation of the optimal design solver backed by "adaptive grid
         semidefinite programming for finding optimal designs" (doi:
