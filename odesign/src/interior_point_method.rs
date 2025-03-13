@@ -187,7 +187,7 @@ pub struct NLPSolverConstraints {
     /// Linear equality constraint.
     pub lin_equal: Option<LinearEqualityConstraint>,
     /// Linear inequality constraint.
-    pub inequal: Option<InequalityConstraint>,
+    pub inequal: Option<Vec<InequalityConstraint>>,
 }
 
 struct NLPPreComputation {
@@ -281,10 +281,13 @@ impl NLPSolver {
                 func_grad -= bound_grad;
                 func_hes += bound_hes;
             }
-            if let Some(inequal) = &self.constraints.inequal {
-                let (inequal_grad, inequal_hes) = self.log_barrier_inequal_grad_hes(&x, inequal);
-                func_grad -= inequal_grad;
-                func_hes += inequal_hes;
+            if let Some(inequal_vec) = &self.constraints.inequal {
+                for inequal in inequal_vec {
+                    let (inequal_grad, inequal_hes) =
+                        self.log_barrier_inequal_grad_hes(&x, inequal);
+                    func_grad -= inequal_grad;
+                    func_hes += inequal_hes;
+                }
             }
 
             a.as_mut()
@@ -353,24 +356,26 @@ impl NLPSolver {
                 return false;
             }
         }
-        if let Some(inequal) = &self.constraints.inequal {
-            match inequal {
-                InequalityConstraint::Voronoi(c) => {
-                    let v = c.val(x);
-                    if v.is_nan() {
-                        return false;
+        if let Some(inequal_vec) = &self.constraints.inequal {
+            for inequal in inequal_vec {
+                match inequal {
+                    InequalityConstraint::Voronoi(c) => {
+                        let v = c.val(x);
+                        if v.is_nan() {
+                            return false;
+                        }
                     }
-                }
-                InequalityConstraint::Custom(f) => {
-                    let v = f.val(x);
-                    if v.is_nan() || v > 0. {
-                        return false;
+                    InequalityConstraint::Custom(f) => {
+                        let v = f.val(x);
+                        if v.is_nan() || v > 0. {
+                            return false;
+                        }
                     }
-                }
-                InequalityConstraint::CustomLogBarrier(f) => {
-                    let v = f.val(x);
-                    if v.is_nan() {
-                        return false;
+                    InequalityConstraint::CustomLogBarrier(f) => {
+                        let v = f.val(x);
+                        if v.is_nan() {
+                            return false;
+                        }
                     }
                 }
             }
@@ -582,9 +587,9 @@ mod tests {
             ));
             let voronoi_lower = lower + 0.01 * i as f64;
             let supp = mat![[voronoi_lower, 0.5, 1.]];
-            let inequal = Some(InequalityConstraint::Voronoi(VoronoiConstraint::new(
+            let inequal = Some(vec![InequalityConstraint::Voronoi(VoronoiConstraint::new(
                 supp, 1,
-            )));
+            ))]);
             let constraints = NLPSolverConstraints {
                 bound,
                 lin_equal: None,

@@ -1,6 +1,7 @@
 use crate::{
-    Error, Grid, LinearEqualityConstraint, MatrixDRows, NLPSolver, NLPSolverConstraints,
-    NLPSolverOptions, Optimalities, Optimality, OptimalityMeasures, Result,
+    Error, Feature, Grid, IntoSVector, LinearEqualityConstraint, MatrixDRows, NLPFunctionTarget,
+    NLPSolver, NLPSolverConstraints, NLPSolverOptions, Optimalities, Optimality,
+    OptimalityMeasures, Result,
     interior_point_method::{InequalityConstraint, NLPBound, VoronoiConstraint},
 };
 use faer_ext::IntoFaer;
@@ -216,10 +217,59 @@ impl<const D: usize> DesignBound<D> {
     }
 }
 
+/// Design Constraint Defined by f(x) <= 0
+#[derive(Clone)]
+pub struct CustomDesignBound<const D: usize> {
+    inequal: Arc<CustomDesignBoundInequalConstr<D>>,
+}
+
+impl<const D: usize> CustomDesignBound<D> {
+    /// Creates the custom design bound by providing a feature f(x)
+    /// such that the design bound fullfills f(x) <= 0
+    pub fn new(f: Arc<dyn Feature<D> + Send + Sync>) -> Self {
+        let inequal: Arc<_> = CustomDesignBoundInequalConstr::new(f).into();
+        Self { inequal }
+    }
+}
+
+struct CustomDesignBoundInequalConstr<const D: usize> {
+    f: Arc<dyn Feature<D> + Send + Sync>,
+}
+
+impl<const D: usize> CustomDesignBoundInequalConstr<D> {
+    pub fn new(f: Arc<dyn Feature<D> + Send + Sync>) -> Self {
+        Self { f }
+    }
+}
+
+impl<const D: usize> NLPFunctionTarget for CustomDesignBoundInequalConstr<D> {
+    fn val(&self, x: &faer::Mat<f64>) -> f64 {
+        let x_svector = x.into_svector();
+        self.f.val(&x_svector)
+    }
+
+    fn val_grad(&self, x: &faer::Mat<f64>) -> (f64, faer::Mat<f64>) {
+        let x_svector = x.into_svector();
+        let (val, grad) = self.f.val_grad(&x_svector);
+        let grad = grad.view_range(.., ..).into_faer().to_owned();
+        (val, grad)
+    }
+
+    fn val_grad_hes(&self, x: &faer::Mat<f64>) -> (f64, faer::Mat<f64>, faer::Mat<f64>) {
+        let x_svector = x.into_svector();
+        let (val, grad, hes) = self.f.val_grad_hes(&x_svector);
+        let grad = grad.view_range(.., ..).into_faer().to_owned();
+        let hes = hes.view_range(.., ..).into_faer().to_owned();
+        (val, grad, hes)
+    }
+}
+
 /// Which constraint is applied to design in optimal design.
 pub enum DesignConstraint<const D: usize> {
     /// Use cubic design bound.
     Bound(DesignBound<D>),
+    /// Use cubic design bound.
+    Custom(CustomDesignBound<D>),
 }
 
 /// Stop criteria of optimal design definition by stopping the algorithm
@@ -344,6 +394,12 @@ impl<const D: usize> OptimalDesign<D> {
     /// Returns the initialized solver with given design bound
     pub fn with_bound(mut self, bound: DesignBound<D>) -> Self {
         self.constraint = DesignConstraint::Bound(bound);
+        self
+    }
+
+    /// Returns the initialized solver with given custom design bound f(x) <= 0
+    pub fn with_custom_bound(mut self, bound: CustomDesignBound<D>) -> Self {
+        self.constraint = DesignConstraint::Custom(bound);
         self
     }
 
@@ -492,22 +548,31 @@ impl<const D: usize> OptimalDesign<D> {
     }
 
     fn minimize_supp_x(&self, x0: SVector<f64, D>, x_id: usize) -> DVector<f64> {
-        let bound = match &self.constraint {
-            DesignConstraint::Bound(b) => Some(NLPBound::new(
-                DVector::from_column_slice(b.lower.as_slice()),
-                DVector::from_column_slice(b.upper.as_slice()),
-            )),
-        };
-
-        let inequal = Some(InequalityConstraint::Voronoi(VoronoiConstraint::new(
+        let mut inequal = Vec::new();
+        let voronoi = InequalityConstraint::Voronoi(VoronoiConstraint::new(
             self.design.supp.view_range(.., ..).into_faer().to_owned(),
             x_id,
-        )));
+        ));
+        inequal.push(voronoi);
+
+        let mut bound: Option<NLPBound> = None;
+        match &self.constraint {
+            DesignConstraint::Bound(b) => {
+                bound = Some(NLPBound::new(
+                    DVector::from_column_slice(b.lower.as_slice()),
+                    DVector::from_column_slice(b.upper.as_slice()),
+                ))
+            }
+            DesignConstraint::Custom(c) => {
+                let custom_constr = InequalityConstraint::Custom(c.inequal.clone());
+                inequal.push(custom_constr);
+            }
+        };
 
         let constraints = NLPSolverConstraints {
             bound,
             lin_equal: None,
-            inequal,
+            inequal: Some(inequal),
         };
         let options = NLPSolverOptions::new();
 

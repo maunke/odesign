@@ -19,7 +19,7 @@ pub use interior_point_method::{
 pub use linear_model::LinearModel;
 pub use odesign_derive::Feature;
 pub use optimal_design::{
-    Design, DesignBound, DesignConstraint, OptimalDesign, OptimalDesignCriteria,
+    CustomDesignBound, Design, DesignBound, DesignConstraint, OptimalDesign, OptimalDesignCriteria,
 };
 pub use optimality::{
     AOptimality, COptimality, DOptimality, Optimalities, Optimality, OptimalityMeasures,

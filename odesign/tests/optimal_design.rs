@@ -1,9 +1,9 @@
 use nalgebra::{DVector, SVector, Vector1};
 use num_dual::*;
 use odesign::{
-    AOptimality, COptimality, DOptimality, Design, DesignBound, Feature, FeatureFunction,
-    FeatureSet, Grid, LinearModel, MatrixDRows, OptimalDesign, OptimalDesignCriteria, Optimality,
-    Result,
+    AOptimality, COptimality, CustomDesignBound, DOptimality, Design, DesignBound, Feature,
+    FeatureFunction, FeatureSet, Grid, LinearModel, MatrixDRows, OptimalDesign,
+    OptimalDesignCriteria, Optimality, Result,
 };
 use std::sync::Arc;
 
@@ -19,6 +19,16 @@ struct Monomial {
 impl FeatureFunction<1> for Monomial {
     fn f<D: DualNum<f64>>(&self, x: &SVector<D, 1>) -> D {
         x[0].powi(self.i)
+    }
+}
+
+#[derive(Feature)]
+#[dimension = 1]
+struct CustomBoundConstraint {}
+
+impl FeatureFunction<1> for CustomBoundConstraint {
+    fn f<D: DualNum<f64>>(&self, x: &SVector<D, 1>) -> D {
+        x[0].powi(2) - 1.0
     }
 }
 
@@ -187,6 +197,41 @@ fn test_optimal_design_acrit_poly_1() -> Result<()> {
 
     let weights_rslt = DVector::from_vec(vec![0.25, 0.5, 0.25]);
     let supp_rslt = MatrixDRows::from_vec(vec![-1., 0., 1.]);
+
+    assert!(
+        design
+            .weights
+            .relative_eq(&weights_rslt, EQ_EPS, EQ_MAX_REL)
+    );
+    assert!(design.supp.relative_eq(&supp_rslt, EQ_EPS, EQ_MAX_REL));
+    Ok(())
+}
+
+#[test]
+fn test_optimal_design_dcrit_poly_1_custom_bound() -> Result<()> {
+    let mut fs = FeatureSet::new();
+    for i in 0..2 {
+        let c: Arc<_> = Monomial { i }.into();
+        fs.push(c);
+    }
+
+    let lm = LinearModel::new(fs.features);
+
+    let q: SVector<usize, 1> = Vector1::new(101);
+    let lower = Vector1::new(-0.9);
+    let upper = Vector1::new(0.9);
+    let optimality = Arc::new(DOptimality::new(lm.into()));
+    let grid = Grid::new(lower, upper, q)?;
+    let design_bound_const: Arc<_> = CustomBoundConstraint {}.into();
+    let custom_bound = CustomDesignBound::new(design_bound_const);
+    let mut od = OptimalDesign::new()
+        .with_optimality(optimality)
+        .with_custom_bound(custom_bound)
+        .with_init_design_grid(grid);
+    let design = od.solve();
+
+    let weights_rslt = DVector::from_element(2, 0.5);
+    let supp_rslt = MatrixDRows::from_vec(vec![-1., 1.]);
 
     assert!(
         design
