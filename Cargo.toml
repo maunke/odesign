@@ -4,7 +4,7 @@ resolver = "2"
 
 [workspace.package]
 authors = ["Markus Unkel <markus@unkel.io>"]
-version = "0.1.5"
+version = "0.1.6"
 edition = "2024"
 description = "odesign is an optimal design of experiments library written in pure rust."
 repository = "https://git.sr.ht/~maunke/odesign"
@@ -21,8 +21,8 @@ katexit = "0.1.4"
 nalgebra = "0.33.2"
 num-dual = "0.11.0"
 thiserror = "2.0.11"
-odesign = { path = "./odesign", version = "0.1.5"}
-odesign-derive = { path = "./odesign-derive", version = "0.1.5"}
+odesign = { path = "./odesign", version = "0.1.6"}
+odesign-derive = { path = "./odesign-derive", version = "0.1.6"}
 
 [profile.release]
 opt-level = 3
