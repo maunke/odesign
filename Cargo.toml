@@ -15,7 +15,7 @@ homepage = "https://odesign.rs"
 
 [workspace.dependencies]
 aquamarine = "0.6.0"
-faer = "0.21.7"
+faer = "=0.21.8"
 faer-ext = { version = "0.5.0", features = ["nalgebra"] }
 katexit = "0.1.4"
 nalgebra = "0.33.2"
