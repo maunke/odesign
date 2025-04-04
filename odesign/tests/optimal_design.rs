@@ -1,9 +1,9 @@
 use nalgebra::{DVector, SVector, Vector1};
 use num_dual::*;
 use odesign::{
-    AOptimality, COptimality, CustomDesignBound, DOptimality, Design, DesignBound, Feature,
-    FeatureFunction, FeatureSet, Grid, LinearModel, MatrixDRows, OptimalDesign,
-    OptimalDesignCriteria, Optimality, Result,
+    AOptimality, COptimality, CostsOptimality, CustomDesignBound, DOptimality, Design, DesignBound,
+    Feature, FeatureFunction, FeatureSet, Grid, LinearModel, MatrixDRows, MatrixUnion,
+    OptimalDesign, OptimalDesignCriteria, Optimalities, Optimality, Result,
 };
 use std::sync::Arc;
 
@@ -232,6 +232,48 @@ fn test_optimal_design_dcrit_poly_1_custom_bound() -> Result<()> {
 
     let weights_rslt = DVector::from_element(2, 0.5);
     let supp_rslt = MatrixDRows::from_vec(vec![-1., 1.]);
+
+    assert!(
+        design
+            .weights
+            .relative_eq(&weights_rslt, EQ_EPS, EQ_MAX_REL)
+    );
+    assert!(design.supp.relative_eq(&supp_rslt, EQ_EPS, EQ_MAX_REL));
+    Ok(())
+}
+
+#[test]
+fn test_optimal_design_dcrit_costscrit_poly_3() -> Result<()> {
+    let mut fs = FeatureSet::new();
+
+    for i in 0..2 {
+        let c: Arc<_> = Monomial { i }.into();
+        fs.push(c);
+    }
+
+    let lm = LinearModel::new(fs.features);
+
+    let q: SVector<usize, 1> = Vector1::new(101);
+    let lower = Vector1::new(-1.);
+    let upper = Vector1::new(1.);
+    let init_grid = Grid::new(lower, upper, q)?;
+    let measurements: Arc<_> = MatrixDRows::from_vec(vec![-0.91, 0.91]).into();
+    let supp = init_grid.points.union(&measurements);
+    let init_design = Design::new_from_supp(supp);
+
+    let d_opt = Arc::new(DOptimality::new(lm.into()));
+    let alpha = 1.0;
+    let costs_opt: Arc<_> = CostsOptimality::new(measurements, alpha).into();
+    let optimalities: Optimalities<1> = vec![d_opt, costs_opt];
+    let bound = DesignBound::new(lower, upper)?;
+    let mut od = OptimalDesign::new()
+        .with_optimalities(optimalities, vec![0.5, 0.5])
+        .with_bound(bound)
+        .with_init_design(init_design);
+    let design = od.solve();
+
+    let weights_rslt = DVector::from_element(2, 0.5);
+    let supp_rslt = MatrixDRows::from_vec(vec![-0.91, 0.91]);
 
     assert!(
         design

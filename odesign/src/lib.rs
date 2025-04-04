@@ -22,6 +22,7 @@ pub use optimal_design::{
     CustomDesignBound, Design, DesignBound, DesignConstraint, OptimalDesign, OptimalDesignCriteria,
 };
 pub use optimality::{
-    AOptimality, COptimality, DOptimality, Optimalities, Optimality, OptimalityMeasures,
+    AOptimality, COptimality, CostsOptimality, DOptimality, Optimalities, Optimality,
+    OptimalityMeasures,
 };
-pub use utils::{IntoSVector, MatrixDRows};
+pub use utils::{IntoSVector, MatrixDRows, MatrixUnion};
