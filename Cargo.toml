@@ -12,6 +12,7 @@ keywords = ["sffs", "statistics", "feature-selection", "optimal-design"]
 categories = ["science"]
 license = "MIT OR Apache-2.0"
 homepage = "https://odesign.rs"
+rust-version = "1.86.0"
 
 [workspace.dependencies]
 aquamarine = "0.6.0"

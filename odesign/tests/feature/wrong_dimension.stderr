@@ -4,7 +4,7 @@ error[E0308]: mismatched types
 5 | #[derive(Feature)]
   |          ^^^^^^^
   |          |
-  |          expected `&Matrix<f64, Const<2>, ..., ...>`, found `&&Matrix<f64, Const<1>, ..., ...>`
+  |          expected `&Matrix<f64, Const<2>, Const<1>, ...>`, found `&&Matrix<f64, Const<1>, Const<1>, ...>`
   |          arguments to this method are incorrect
   |
   = note: expected reference `&Matrix<f64, Const<2>, Const<1>, ArrayStorage<f64, 2, 1>>`
