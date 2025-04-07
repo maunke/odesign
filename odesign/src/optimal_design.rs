@@ -215,6 +215,18 @@ impl<const D: usize> DesignBound<D> {
 
         Ok(Self { lower, upper })
     }
+
+    /// Returns the interection of two design bounds
+    /// e.g. [-1, 1] intersects [-2, 0.5] = [-1, 0.5]
+    pub fn intersection(&self, bound: &DesignBound<D>) -> DesignBound<D> {
+        let lower = SVector::<f64, D>::from_iterator(
+            zip(self.lower.iter(), bound.lower.iter()).map(|(&a, &b)| a.max(b)),
+        );
+        let upper = SVector::<f64, D>::from_iterator(
+            zip(self.upper.iter(), bound.upper.iter()).map(|(&a, &b)| a.min(b)),
+        );
+        Self { lower, upper }
+    }
 }
 
 /// Design Constraint Defined by f(x) <= 0
@@ -305,6 +317,7 @@ pub struct OptimalDesign<const D: usize> {
     constraint: DesignConstraint<D>,
     criteria: OptimalDesignCriteria,
     iterations: usize,
+    voronoi_phase: bool,
 }
 
 impl<const D: usize> Display for OptimalDesign<D> {
@@ -346,6 +359,7 @@ impl<const D: usize> Default for OptimalDesign<D> {
         let constraint = DesignConstraint::Bound(bound);
         let criteria = OptimalDesignCriteria::default();
         let iterations = 0;
+        let voronoi_phase = true;
         Self {
             optimalities,
             weights,
@@ -353,6 +367,7 @@ impl<const D: usize> Default for OptimalDesign<D> {
             constraint,
             criteria,
             iterations,
+            voronoi_phase,
         }
     }
 }
@@ -472,6 +487,12 @@ impl<const D: usize> OptimalDesign<D> {
             } else if supp_diff < self.design.supp.norm() * self.criteria.supp_precision {
                 distance_proof = false;
             }
+
+            if (!distance_proof || !measure_proof) && self.voronoi_phase {
+                self.voronoi_phase = false;
+                distance_proof = true;
+                measure_proof = true;
+            }
         }
         self.iterations = iter;
         &self.design
@@ -549,19 +570,44 @@ impl<const D: usize> OptimalDesign<D> {
 
     fn minimize_supp_x(&self, x0: SVector<f64, D>, x_id: usize) -> DVector<f64> {
         let mut inequal = Vec::new();
-        let voronoi = InequalityConstraint::Voronoi(VoronoiConstraint::new(
-            self.design.supp.view_range(.., ..).into_faer().to_owned(),
-            x_id,
-        ));
-        inequal.push(voronoi);
-
         let mut bound: Option<NLPBound> = None;
+        if self.voronoi_phase {
+            let voronoi = InequalityConstraint::Voronoi(VoronoiConstraint::new(
+                self.design.supp.view_range(.., ..).into_faer().to_owned(),
+                x_id,
+            ));
+            inequal.push(voronoi);
+        }
         match &self.constraint {
             DesignConstraint::Bound(b) => {
+                // find smallest distance to other support vectors
+                let smallest_distance =
+                    self.design
+                        .supp
+                        .column_iter()
+                        .enumerate()
+                        .fold(f64::MAX, |dist, (idx, s)| {
+                            if idx != x_id {
+                                let d = (s - x0).norm();
+                                if d < dist { d } else { dist }
+                            } else {
+                                dist
+                            }
+                        });
+                let mut local_lower = x0;
+                local_lower.iter_mut().for_each(|v| {
+                    *v -= smallest_distance;
+                });
+                let mut local_upper = x0;
+                local_upper.iter_mut().for_each(|v| {
+                    *v += smallest_distance;
+                });
+                let local_design_bound = DesignBound::new(local_lower, local_upper).unwrap();
+                let design_bound = b.intersection(&local_design_bound);
                 bound = Some(NLPBound::new(
-                    DVector::from_column_slice(b.lower.as_slice()),
-                    DVector::from_column_slice(b.upper.as_slice()),
-                ))
+                    DVector::from_column_slice(design_bound.lower.as_slice()),
+                    DVector::from_column_slice(design_bound.upper.as_slice()),
+                ));
             }
             DesignConstraint::Custom(c) => {
                 let custom_constr = InequalityConstraint::Custom(c.inequal.clone());
