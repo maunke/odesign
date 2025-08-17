@@ -693,4 +693,71 @@ mod tests {
 
         Ok(())
     }
+
+    struct NLPTargetConvex {}
+
+    // f(x) = x_0 ^ 2 + x_1 ^ 2
+    impl NLPFunctionTarget for NLPTargetConvex {
+        fn val(&self, x: &Mat<f64>) -> f64 {
+            x[(0, 0)].powi(2) + x[(1, 0)].powi(2)
+        }
+
+        fn val_grad(&self, x: &Mat<f64>) -> (f64, Mat<f64>) {
+            let val = self.val(x);
+            (val, 2. * x)
+        }
+        fn val_grad_hes(&self, x: &Mat<f64>) -> (f64, Mat<f64>, Mat<f64>) {
+            let vg = self.val_grad(x);
+            (vg.0, vg.1, mat![[2., 0.], [0., 2.]])
+        }
+    }
+
+    struct NLPTargetConvexInequalConstr {}
+
+    // f(x) = x_0 <= 0
+    impl NLPFunctionTarget for NLPTargetConvexInequalConstr {
+        fn val(&self, x: &Mat<f64>) -> f64 {
+            x[(0, 0)]
+        }
+
+        fn val_grad(&self, x: &Mat<f64>) -> (f64, Mat<f64>) {
+            let val = self.val(x);
+            (val, mat![[1.], [0.]])
+        }
+
+        fn val_grad_hes(&self, x: &Mat<f64>) -> (f64, Mat<f64>, Mat<f64>) {
+            let val_grad = self.val_grad(x);
+            (val_grad.0, val_grad.1, mat![[0., 0.], [0., 0.]])
+        }
+    }
+
+    #[test]
+    fn test_convex_opt() -> Result<()> {
+        let size = 2;
+        let bound = Some(NLPBound::new(
+            DVector::from_element(size, -1.0),
+            DVector::from_element(size, 1.),
+        ));
+
+        let lin_equal = Some(LinearEqualityConstraint {
+            mat: DMatrix::from_vec(1, 2, vec![1., 1.]),
+        });
+
+        let inequal_target = NLPTargetConvexInequalConstr {};
+        let inequal = Some(vec![InequalityConstraint::Custom(Arc::new(inequal_target))]);
+        let constraints = NLPSolverConstraints {
+            bound,
+            lin_equal,
+            inequal,
+        };
+        let options = NLPSolverOptions::new();
+
+        let nlp_target: Arc<_> = NLPTargetConvex {}.into();
+
+        let solver = NLPSolver::new(options, constraints, nlp_target);
+        let x0 = DVector::from_vec(vec![-0.9, 0.9]);
+        let x_min = solver.minimize(x0);
+        assert!(x_min.relative_eq(&DVector::from_vec(vec![0., 0.]), 1e-4, 1e-4));
+        Ok(())
+    }
 }
