@@ -16,14 +16,12 @@ fn derive_feature_impl(input: DeriveInput) -> syn::Result<proc_macro::TokenStrea
     let mut dimension: Option<usize> = None;
 
     for attr in input.attrs {
-        if attr.path().is_ident("dimension") {
-            if let syn::Meta::NameValue(meta) = attr.meta {
-                if let syn::Expr::Lit(val) = meta.value {
-                    if let syn::Lit::Int(v) = val.lit {
-                        dimension = Some(v.base10_parse::<usize>().unwrap());
-                    }
-                }
-            }
+        if attr.path().is_ident("dimension")
+            && let syn::Meta::NameValue(meta) = attr.meta
+            && let syn::Expr::Lit(val) = meta.value
+            && let syn::Lit::Int(v) = val.lit
+        {
+            dimension = Some(v.base10_parse::<usize>().unwrap());
         }
     }
 

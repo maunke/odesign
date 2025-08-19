@@ -351,10 +351,10 @@ impl NLPSolver {
 
     #[inline(always)]
     fn feasibility_check(&self, x: &Mat<f64>) -> bool {
-        if let Some(bound) = &self.constraints.bound {
-            if self.mat_min(&(x - &bound.lower)) < 0. || self.mat_min(&(&bound.upper - x)) < 0. {
-                return false;
-            }
+        if let Some(bound) = &self.constraints.bound
+            && (self.mat_min(&(x - &bound.lower)) < 0. || self.mat_min(&(&bound.upper - x)) < 0.)
+        {
+            return false;
         }
         if let Some(inequal_vec) = &self.constraints.inequal {
             for inequal in inequal_vec {

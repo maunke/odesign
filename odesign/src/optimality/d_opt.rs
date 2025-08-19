@@ -152,9 +152,9 @@ impl<const D: usize> NLPFunctionTarget for DDispersionFunction<D> {
     fn val(&self, x: &Mat<f64>) -> f64 {
         let x_svector = x.into_svector();
         let (feature_vec, inv_fim_design) = self.pre_calculations(&x_svector);
-        let val = -feature_vec.col(0).transpose() * inv_fim_design.col(0)
-            + self.linear_model.features.len() as f64;
-        val
+
+        -feature_vec.col(0).transpose() * inv_fim_design.col(0)
+            + self.linear_model.features.len() as f64
     }
 
     fn val_grad(&self, x: &Mat<f64>) -> (f64, Mat<f64>) {
