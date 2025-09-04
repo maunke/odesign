@@ -645,8 +645,10 @@ impl<const D: usize> OptimalDesign<D> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{MatrixDRows, Result};
+    use crate::{FeatureFunction, MatrixDRows, Result, assert_nlp_target_consistency};
+    use faer::Mat;
     use nalgebra::{DVector, Vector2};
+    use num_dual::DualNum;
 
     const EQ_EPS: f64 = 1e-5;
     const EQ_MAX_REL: f64 = 1e-5;
@@ -753,6 +755,28 @@ mod tests {
             ----------------------------"
                 .to_string()
         );
+        Ok(())
+    }
+
+    #[derive(Feature)]
+    #[dimension = 2]
+    struct Monomial {
+        i: i32,
+        j: i32,
+    }
+
+    impl FeatureFunction<2> for Monomial {
+        fn f<D: DualNum<f64>>(&self, x: &SVector<D, 2>) -> D {
+            x[0].powi(self.i) * x[1].powi(self.j)
+        }
+    }
+
+    #[test]
+    fn test_custom_design_bound_inequal_constr() -> Result<()> {
+        let monomial: Arc<_> = Monomial { i: 1, j: 1 }.into();
+        let constr = CustomDesignBoundInequalConstr::new(monomial);
+        let x = Mat::<f64>::ones(2, 1);
+        assert_nlp_target_consistency!(constr, &x);
         Ok(())
     }
 }
