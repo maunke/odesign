@@ -760,4 +760,54 @@ mod tests {
         assert!(x_min.relative_eq(&DVector::from_vec(vec![0., 0.]), 1e-4, 1e-4));
         Ok(())
     }
+
+    // Rosenbrock function with a = 1, b = 100
+    // f(x, y) = (1 - x)^2 + 100 * (y - x^2)^2
+    // With global minimum at (a, a^2) = (1, 1)
+    struct NLPTargetRosenbrock {}
+
+    impl NLPFunctionTarget for NLPTargetRosenbrock {
+        fn val(&self, x: &Mat<f64>) -> f64 {
+            (1.0 - x[(0, 0)]).powi(2) + 100.0 * (x[(1, 0)] - x[(0, 0)].powi(2)).powi(2)
+        }
+
+        fn val_grad(&self, x: &Mat<f64>) -> (f64, Mat<f64>) {
+            let val = self.val(x);
+            let grad_x =
+                -2.0 * (1.0 - x[(0, 0)]) - 400.0 * (x[(1, 0)] - x[(0, 0)].powi(2)) * x[(0, 0)];
+            let grad_y = 200.0 * (x[(1, 0)] - x[(0, 0)].powi(2));
+
+            (val, mat![[grad_x], [grad_y]])
+        }
+        fn val_grad_hes(&self, x: &Mat<f64>) -> (f64, Mat<f64>, Mat<f64>) {
+            let vg = self.val_grad(x);
+            let hes_xx = 2.0 + 1200.0 * x[(0, 0)].powi(2) - 400.0 * x[(1, 0)];
+            let hes_xy = -400.0 * x[(0, 0)];
+            let hes_yy = 200.0;
+            (vg.0, vg.1, mat![[hes_xx, hes_xy], [hes_xy, hes_yy]])
+        }
+    }
+
+    #[test]
+    fn test_rosenbrock_opt() -> Result<()> {
+        let size = 2;
+        let bound = Some(NLPBound::new(
+            DVector::from_element(size, -10.0),
+            DVector::from_element(size, 10.0),
+        ));
+        let constraints = NLPSolverConstraints {
+            bound,
+            lin_equal: None,
+            inequal: None,
+        };
+        let options = NLPSolverOptions::new();
+
+        let nlp_target: Arc<_> = NLPTargetRosenbrock {}.into();
+
+        let solver = NLPSolver::new(options, constraints, nlp_target);
+        let x0 = DVector::from_vec(vec![5.0, -5.0]);
+        let x_min = solver.minimize(x0.clone());
+        assert!(x_min.relative_eq(&DVector::from_vec(vec![1., 1.]), 1e-4, 1e-4));
+        Ok(())
+    }
 }
