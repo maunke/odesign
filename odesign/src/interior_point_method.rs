@@ -643,13 +643,29 @@ mod tests {
                 lin_equal: None,
                 inequal: None,
             },
-            nlp_target,
+            nlp_target.clone(),
         );
 
         let gh_custom = solver.log_barrier_inequal_grad_hes(&x, &custom_log_barrier);
 
         assert!((vgh.1 - gh_custom.0).norm_l2() < 1e-8);
         assert!((vgh.2 - gh_custom.1).norm_l2() < 1e-8);
+
+        let solver = NLPSolver::new(
+            NLPSolverOptions::new(),
+            NLPSolverConstraints {
+                bound: None,
+                lin_equal: None,
+                inequal: Some(vec![custom_log_barrier]),
+            },
+            nlp_target,
+        );
+
+        let x0 = DVector::from_vec(vec![0.5]);
+        let x_min = solver.minimize(x0);
+
+        assert!(x_min.relative_eq(&DVector::from_vec(vec![0.25]), 1e-4, 1e-4));
+
         Ok(())
     }
 
