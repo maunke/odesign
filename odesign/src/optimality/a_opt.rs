@@ -71,11 +71,6 @@ impl<const D: usize> MatrixMean<D> {
     }
 
     #[inline(always)]
-    fn z(&self, fim_inv: &Mat<f64>) -> Mat<f64> {
-        &self.design * (fim_inv * fim_inv) * &self.design_t
-    }
-
-    #[inline(always)]
     fn z_one_and_two(&self, fim_inv: &Mat<f64>) -> (Mat<f64>, Mat<f64>) {
         let tmp = fim_inv * &self.design_t;
         (&self.design * &tmp, &self.design * fim_inv * &tmp)
@@ -92,7 +87,7 @@ impl<const D: usize> NLPFunctionTarget for MatrixMean<D> {
     #[inline(always)]
     fn val_grad(&self, x: &Mat<f64>) -> (f64, Mat<f64>) {
         let (fim_inv, trace) = self.fim_inv_trace(x);
-        let z = self.z(&fim_inv);
+        let z = self.z_one_and_two(&fim_inv).1;
         let val = trace.ln();
         let mut grad = Mat::<f64>::zeros(z.nrows(), 1);
         for row in 0..grad.nrows() {
@@ -226,6 +221,16 @@ mod tests {
         let x = Mat::<f64>::ones(1, 1);
         assert_nlp_target_consistency!(dcrit, &x);
 
+        Ok(())
+    }
+
+    #[test]
+    fn test_a_crit_matrix_mean_consistency() -> Result<()> {
+        let linear_model: Arc<_> = get_linear_model().into();
+        let supp: Arc<_> = MatrixDRows::from_vec(vec![1., 2., 3., 4.]).into();
+        let mean = MatrixMean::new(linear_model, supp);
+        let weights = Mat::<f64>::ones(4, 1);
+        assert_nlp_target_consistency!(mean, &weights);
         Ok(())
     }
 }
