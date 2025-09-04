@@ -232,4 +232,14 @@ mod tests {
 
         Ok(())
     }
+
+    #[test]
+    fn d_crit_matrix_mean_consistency() -> Result<()> {
+        let linear_model: Arc<_> = get_linear_model().into();
+        let supp: Arc<_> = MatrixDRows::from_vec(vec![1., 2., 3., 4.]).into();
+        let weights = Mat::<f64>::ones(2, 1);
+        let mean = DMatrixMean::new(linear_model, supp);
+        assert_nlp_target_consistency!(mean, &weights);
+        Ok(())
+    }
 }
