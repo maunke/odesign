@@ -104,6 +104,102 @@ fn main() -> Result<()> {
 // ----------------------------
 ```
 
+## Advanced Example
+
+As a more complex example please take a look at this [3 dimensional polynomial example](https://git.sr.ht/~maunke/odesign/tree/main/item/odesign-examples/examples/polynomial-3dim/main.rs) with monoms lower than a degree of 3 within a
+design space of [-1, -1, -1] x [+1, +1, +1] and an initial design grid of 11 x 11 x 11 points.
+
+```rust
+use nalgebra::{SVector, Vector3};
+use num_dual::DualNum;
+use odesign::{
+    DOptimality, Feature, FeatureFunction, FeatureSet, LinearModel, OptimalDesign, Result,
+};
+use std::sync::Arc;
+
+#[derive(Feature)]
+#[dimension = 3]
+struct Monomial {
+    i: i32,
+    j: i32,
+    k: i32,
+}
+
+impl FeatureFunction<3> for Monomial {
+    fn f<D: DualNum<f64>>(&self, x: &SVector<D, 3>) -> D {
+        x[0].powi(self.i) * x[1].powi(self.j) * x[2].powi(self.k)
+    }
+}
+
+// f(x, y, z):  1 + x + y + z
+//              + x * y + x * z + y * y
+//              + x ^ 2 + y ^ 2 + z ^ 2
+fn main() -> Result<()> {
+    let mut fs = FeatureSet::new();
+    for i in 0..3 {
+        for j in 0..3 {
+            for k in 0..3 {
+                if i + j + k < 3 {
+                    let c: Arc<_> = Monomial { i, j, k }.into();
+                    fs.push(c);
+                }
+            }
+        }
+    }
+
+    let lm = LinearModel::new(fs.features);
+
+    let q = Vector3::new(11, 11, 11);
+    let lower = Vector3::new(-1., -1., -1.);
+    let upper = Vector3::new(1., 1., 1.);
+    let optimality = Arc::new(DOptimality::new(lm.into()));
+    let mut od = OptimalDesign::new()
+        .with_optimality(optimality)
+        .with_bound_args(lower, upper)?
+        .with_init_design_grid_args(lower, upper, q)?;
+    od.solve();
+
+    println!("{od}");
+
+    Ok(())
+}
+// Output
+// -------------- Design ---------------
+// Weight	Support Vector
+// 0.0689	[ -1.0000, -1.0000, -1.0000 ]
+// 0.0251	[ -1.0000, -1.0000, +0.0000 ]
+// 0.0689	[ -1.0000, -1.0000, +1.0000 ]
+// 0.0251	[ -1.0000, +0.0000, -1.0000 ]
+// 0.0205	[ -1.0000, +0.0000, +0.0000 ]
+// 0.0251	[ -1.0000, +0.0000, +1.0000 ]
+// 0.0689	[ -1.0000, +1.0000, -1.0000 ]
+// 0.0251	[ -1.0000, +1.0000, +0.0000 ]
+// 0.0689	[ -1.0000, +1.0000, +1.0000 ]
+// 0.0251	[ +0.0000, -1.0000, -1.0000 ]
+// 0.0205	[ +0.0000, -1.0000, +0.0000 ]
+// 0.0251	[ +0.0000, -1.0000, +1.0000 ]
+// 0.0205	[ +0.0000, +0.0000, -1.0000 ]
+// 0.0245	[ +0.0000, +0.0000, +0.0000 ]
+// 0.0205	[ +0.0000, +0.0000, +1.0000 ]
+// 0.0251	[ +0.0000, +1.0000, -1.0000 ]
+// 0.0205	[ +0.0000, +1.0000, +0.0000 ]
+// 0.0251	[ +0.0000, +1.0000, +1.0000 ]
+// 0.0689	[ +1.0000, -1.0000, -1.0000 ]
+// 0.0251	[ +1.0000, -1.0000, +0.0000 ]
+// 0.0689	[ +1.0000, -1.0000, +1.0000 ]
+// 0.0251	[ +1.0000, +0.0000, -1.0000 ]
+// 0.0205	[ +1.0000, +0.0000, +0.0000 ]
+// 0.0251	[ +1.0000, +0.0000, +1.0000 ]
+// 0.0689	[ +1.0000, +1.0000, -1.0000 ]
+// 0.0251	[ +1.0000, +1.0000, +0.0000 ]
+// 0.0689	[ +1.0000, +1.0000, +1.0000 ]
+// ------------ Statistics -------------
+// Optimality measure: 0.474478
+// No. support vectors: 27
+// Iterations: 2
+// -------------------------------------
+```
+
 ## Roadmap
 
 - Optimalities:
