@@ -42,10 +42,17 @@ appropriate.
 
 ## Basic Example
 
+Run the example:
+
+```bash
+cargo run --release --example basic
+```
+
 In short, this is a
 [basic example](https://git.sr.ht/~maunke/odesign/tree/main/item/odesign-examples/examples/basic/main.rs)
 of an optimal design of the simple polynomial 1 + x within design bounds [-1,
 +1] and 101 equally distributed grid points as an init design.
+
 
 ```rust
 use nalgebra::{SVector, Vector1};
@@ -105,6 +112,12 @@ fn main() -> Result<()> {
 ```
 
 ## Advanced Example
+
+Run the example:
+
+```bash
+cargo run --release --example polynomial-3dim
+```
 
 As a more complex example please take a look at this [3 dimensional polynomial example](https://git.sr.ht/~maunke/odesign/tree/main/item/odesign-examples/examples/polynomial-3dim/main.rs) with monoms lower than a degree of 3 within a
 design space of [-1, -1, -1] x [+1, +1, +1] and an initial design grid of 11 x 11 x 11 points.
