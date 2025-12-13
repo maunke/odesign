@@ -16,29 +16,25 @@ Please have a look at the book on [odesign.rs](https://odesign.rs) for a high
 level introduction and theoretical background and at the docs on
 [docs.rs/odesign](https://docs.rs/odesign) for the implementation details.
 
-## Community
+## Roadmap
 
-### Mailing lists
-
-- [odesign-announce](https://lists.sr.ht/~maunke/odesign-announce): Low-volume
-  mailing list for announcements
-- [odesign-discuss](https://lists.sr.ht/~maunke/odesign-discuss): Mailing list
-  for end-user discussion and questions
-- [odesign-devel](https://lists.sr.ht/~maunke/odesign-devel): Mailing list for
-  development discussion and patches. For help sending patches to this list,
-  please consult [git-send-email.io](https://git-send-email.io).
-
-### Tickets
-
-The tracker on [todo.sr.ht/~maunke/odesign](https://todo.sr.ht/~maunke/odesign)
-is for confirmed bugs and confirmed feature requests only.
-
-Before creating a ticket, search for existing (possibly already fixed) issues,
-on the docs or in the mailing list archives: odesign-discuss, odesign-devel.
-
-If you cannot find anything describing your issue or if you have a question, ask
-on one of the the mailing lists first. You will be asked to file a ticket if
-appropriate.
+- Optimalities:
+  - [x] D-Optimality
+  - [x] C-Optimality
+  - [x] Custom Optimality
+  - [x] A-Optimality
+  - [x] Costs Optimality
+- Design Bounds:
+  - [x] Cubic Bounds
+  - [x] Custom Bounds
+- Documentation:
+  - [ ] documentation of the optimal design solver backed by "adaptive grid
+        semidefinite programming for finding optimal designs" (doi:
+        [10.1007/s11222-017-9741-y](https://doi.org/10.1007/s11222-017-9741-y))
+- Research:
+  - [ ] New optimal design feature selection algorithm, a mixture of SFFS, D-,
+        C- and Measurements-Costs-Optimality, allowing to perform model feature
+        selection and measurements alternating
 
 ## Basic Example
 
@@ -213,22 +209,26 @@ fn main() -> Result<()> {
 // -------------------------------------
 ```
 
-## Roadmap
+## Community
 
-- Optimalities:
-  - [x] D-Optimality
-  - [x] C-Optimality
-  - [x] Custom Optimality
-  - [x] A-Optimality
-  - [x] Costs Optimality
-- Design Bounds:
-  - [x] Cubic Bounds
-  - [x] Custom Bounds
-- Documentation:
-  - [ ] documentation of the optimal design solver backed by "adaptive grid
-        semidefinite programming for finding optimal designs" (doi:
-        [10.1007/s11222-017-9741-y](https://doi.org/10.1007/s11222-017-9741-y))
-- Research:
-  - [ ] New optimal design feature selection algorithm, a mixture of SFFS, D-,
-        C- and Measurements-Costs-Optimality, allowing to perform model feature
-        selection and measurements alternating
+### Mailing lists
+
+- [odesign-announce](https://lists.sr.ht/~maunke/odesign-announce): Low-volume
+  mailing list for announcements
+- [odesign-discuss](https://lists.sr.ht/~maunke/odesign-discuss): Mailing list
+  for end-user discussion and questions
+- [odesign-devel](https://lists.sr.ht/~maunke/odesign-devel): Mailing list for
+  development discussion and patches. For help sending patches to this list,
+  please consult [git-send-email.io](https://git-send-email.io).
+
+### Tickets
+
+The tracker on [todo.sr.ht/~maunke/odesign](https://todo.sr.ht/~maunke/odesign)
+is for confirmed bugs and confirmed feature requests only.
+
+Before creating a ticket, search for existing (possibly already fixed) issues,
+on the docs or in the mailing list archives: odesign-discuss, odesign-devel.
+
+If you cannot find anything describing your issue or if you have a question, ask
+on one of the the mailing lists first. You will be asked to file a ticket if
+appropriate.
