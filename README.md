@@ -1,3 +1,3 @@
-[Moved to codeberg](https://codeberg.org/maunke)
+[Moved to codeberg](https://codeberg.org/maunke/odesign)
 
 This repository is not mirrored.
