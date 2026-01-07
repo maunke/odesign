@@ -30,8 +30,32 @@ impl DesignCrit {
     }
 }
 
-/// Contains the column-orientated support vectors and their weights. Additionally the crit is used
-/// to set the filter and collapse constraints.
+/// Contains the column-orientated support vectors and their replications.
+pub struct DiscreteDesign<const D: usize> {
+    /// Replications
+    pub replications: DVector<usize>,
+    /// The support matrix contains the set of column-orientated support vectors.
+    pub supp: MatrixDRows<D>,
+}
+
+impl<const D: usize> DiscreteDesign<D> {
+    /// Map the continuous design to a discrete design.
+    /// replications = ceil(weight * replication_factor)
+    pub fn from_design(design: &Design<D>, replication_factor: f64) -> Self {
+        let supp = design.supp.clone();
+        let replications = DVector::from_iterator(
+            design.weights.len(),
+            design
+                .weights
+                .iter()
+                .map(|&w| (w * replication_factor).ceil() as usize),
+        );
+        Self { replications, supp }
+    }
+}
+
+/// Contains the column-orientated support vectors and their continuous weights. Additionally the crit
+/// is used to set the filter and collapse constraints.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Design<const D: usize> {
     /// The i-th weights element relates to the i-th column in support vector matrix.
@@ -193,7 +217,7 @@ impl<const D: usize> Design<D> {
 }
 
 /// Contains the lower and upper bound for design support vectors.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub struct DesignBound<const D: usize> {
     lower: SVector<f64, D>,
     upper: SVector<f64, D>,
@@ -226,6 +250,16 @@ impl<const D: usize> DesignBound<D> {
             zip(self.upper.iter(), bound.upper.iter()).map(|(&a, &b)| a.min(b)),
         );
         Self { lower, upper }
+    }
+
+    /// Returns the lower bound
+    pub fn lower(self) -> SVector<f64, D> {
+        self.lower
+    }
+
+    /// Returns the upper bound
+    pub fn upper(self) -> SVector<f64, D> {
+        self.upper
     }
 }
 
@@ -777,6 +811,22 @@ mod tests {
         let constr = CustomDesignBoundInequalConstr::new(monomial);
         let x = Mat::<f64>::ones(2, 1);
         assert_nlp_target_consistency!(constr, &x);
+        Ok(())
+    }
+
+    #[test]
+    fn test_continuous_to_discrete_design() -> Result<()> {
+        let supp = MatrixDRows::<2>::from_vec(vec![1., 1., 2., 2.]);
+        let weights = DVector::from(vec![0.8, 0.2]);
+        let design = Design::new(weights, supp)?;
+
+        let replication_factor = 10.0;
+        let discrete_design = DiscreteDesign::from_design(&design, replication_factor);
+        assert_eq!(discrete_design.replications, DVector::from_vec(vec![8, 2]));
+
+        let replication_factor = 1.0;
+        let discrete_design = DiscreteDesign::from_design(&design, replication_factor);
+        assert_eq!(discrete_design.replications, DVector::from_vec(vec![1, 1]));
         Ok(())
     }
 }
