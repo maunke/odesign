@@ -63,11 +63,49 @@ impl<const D: usize> IntoSVector<D> for &Mat<f64> {
     }
 }
 
+fn subsets_generator(subset: Vec<usize>, pos: usize, k: usize, s: usize) -> Vec<Vec<usize>> {
+    if subset.len() == k {
+        vec![subset]
+    } else if pos < s {
+        let mut subsets = vec![];
+        for idx in pos..s {
+            let mut s_subset = subset.clone();
+            s_subset.push(idx);
+            subsets.extend(subsets_generator(s_subset, idx + 1, k, s));
+        }
+        subsets
+    } else {
+        vec![]
+    }
+}
+
+/// Returns the set of index subsets with length k out of a set of the size s
+pub fn subsets_len_k_in_s(k: usize, s: usize) -> Vec<Vec<usize>> {
+    if s < k || (k == s && s == 0) || k == 0 {
+        return vec![];
+    }
+    subsets_generator(vec![], 0, k, s)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::Result;
     use faer::mat;
+
+    /// Binomial coefficient
+    fn binom_coeff(n: usize, mut k: usize) -> usize {
+        let mut c = 1;
+        // use symmetry
+        if k > n - k {
+            k = n - k;
+        }
+        for i in 0..k {
+            c *= n - i;
+            c /= i + 1;
+        }
+        c
+    }
 
     #[test]
     fn test_into_svector() -> Result<()> {
@@ -100,5 +138,59 @@ mod tests {
         let vec_find_by_indices = mat_a.find_col_indices(&mat_b);
         let vec_assert = vec![1, 2, 3];
         assert_eq!(vec_find_by_indices, vec_assert);
+    }
+
+    #[test]
+    fn test_binom_coeff() {
+        // (n, k, binom_coeff)
+        let lookup: Vec<(usize, usize, usize)> = vec![
+            (0, 0, 1),
+            (0, 1, 0),
+            (1, 0, 1),
+            (1, 2, 0),
+            (2, 0, 1),
+            (2, 1, 2),
+            (3, 0, 1),
+            (3, 1, 3),
+            (3, 2, 3),
+            (4, 0, 1),
+            (4, 1, 4),
+            (4, 2, 6),
+            (14, 3, 364),
+        ];
+
+        for &l in lookup.iter() {
+            assert_eq!(binom_coeff(l.0, l.1), l.2)
+        }
+    }
+
+    #[test]
+    fn test_subsets_len_k_in_s() {
+        let tests: Vec<(usize, usize, Vec<Vec<usize>>)> = vec![
+            (1, 1, vec![vec![0]]),
+            (1, 2, vec![vec![0], vec![1]]),
+            (2, 3, vec![vec![0, 1], vec![0, 2], vec![1, 2]]),
+            (
+                2,
+                4,
+                vec![
+                    vec![0, 1],
+                    vec![0, 2],
+                    vec![0, 3],
+                    vec![1, 2],
+                    vec![1, 3],
+                    vec![2, 3],
+                ],
+            ),
+        ];
+
+        for t in tests {
+            let s = subsets_len_k_in_s(t.0, t.1);
+            assert_eq!(s.len(), t.2.len());
+            assert_eq!(s.len(), binom_coeff(t.1, t.0));
+            for (a, b) in s.into_iter().zip(t.2) {
+                assert_eq!(a, b);
+            }
+        }
     }
 }
