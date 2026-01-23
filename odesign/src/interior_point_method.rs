@@ -3,6 +3,42 @@ use faer_ext::{IntoFaer, IntoNalgebra};
 use nalgebra::{DMatrix, DVector};
 use std::sync::Arc;
 
+/// Configuration of [NLPSolver].
+pub struct NLPSolverOptions {
+    barrier_prec: f64,
+    newton_prec: f64,
+    barrier_max_iter: u64,
+    newton_max_iter: u64,
+    backline_max_iter: u64,
+    barrier_mu: f64,
+    barrier_t0: f64,
+    backline_a: f64,
+    backline_b: f64,
+}
+
+impl Default for NLPSolverOptions {
+    fn default() -> Self {
+        Self {
+            barrier_prec: 1e-8,
+            newton_prec: 1e-6,
+            barrier_max_iter: 1_000,
+            newton_max_iter: 1_000,
+            backline_max_iter: 100,
+            barrier_mu: 5.,
+            barrier_t0: 50.,
+            backline_a: 0.8,
+            backline_b: 0.8,
+        }
+    }
+}
+
+impl NLPSolverOptions {
+    /// Creates a new nlp solver Configuration with its default values.
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+
 /// Interface for functions of which values are minimized by proving value, gradient and hessian
 /// methods.
 pub trait NLPFunctionTarget {
@@ -112,42 +148,6 @@ macro_rules! assert_nlp_target_consistency {
         assert_eq!(val, val_grad_hes.0);
         assert_eq!(val_grad.1, val_grad_hes.1);
     };
-}
-
-/// Configuration of [NLPSolver].
-pub struct NLPSolverOptions {
-    barrier_prec: f64,
-    newton_prec: f64,
-    barrier_max_iter: u64,
-    newton_max_iter: u64,
-    backline_max_iter: u64,
-    barrier_mu: f64,
-    barrier_t0: f64,
-    backline_a: f64,
-    backline_b: f64,
-}
-
-impl Default for NLPSolverOptions {
-    fn default() -> Self {
-        Self {
-            barrier_prec: 1e-8,
-            newton_prec: 1e-6,
-            barrier_max_iter: 1_000,
-            newton_max_iter: 1_000,
-            backline_max_iter: 100,
-            barrier_mu: 5.,
-            barrier_t0: 50.,
-            backline_a: 0.8,
-            backline_b: 0.8,
-        }
-    }
-}
-
-impl NLPSolverOptions {
-    /// Creates a new nlp solver Configuration with its default values.
-    pub fn new() -> Self {
-        Self::default()
-    }
 }
 
 pub struct NLPBound {
@@ -824,6 +824,155 @@ mod tests {
         let x0 = DVector::from_vec(vec![5.0, -5.0]);
         let x_min = solver.minimize(x0.clone());
         assert!(x_min.relative_eq(&DVector::from_vec(vec![1., 1.]), 1e-4, 1e-4));
+        Ok(())
+    }
+
+    /// Markowitz Portfolio Optimization (Mean-Variance Portfolio Theory)
+    ///
+    /// This test implements the classic Markowitz portfolio optimization problem from
+    /// financial mathematics (Nobel Prize in Economics, 1990). The objective is to
+    /// minimize portfolio variance (risk) subject to constraints.
+    ///
+    /// Problem formulation:
+    ///   minimize    w^T Σ w           (portfolio variance)
+    ///   subject to  Σ w_i = 1         (weights sum to 1)
+    ///               w_i >= 0          (no short selling)
+    ///
+    /// where:
+    ///   - w is the vector of portfolio weights
+    ///   - Σ (Sigma) is the covariance matrix of asset returns
+    ///
+    /// This is a convex quadratic programming problem, ideal for interior point methods.
+    struct NLPTargetMarkowitz {
+        /// Covariance matrix of asset returns (symmetric positive semi-definite)
+        covariance: Mat<f64>,
+    }
+
+    impl NLPTargetMarkowitz {
+        fn new(covariance: Mat<f64>) -> Self {
+            Self { covariance }
+        }
+    }
+
+    impl NLPFunctionTarget for NLPTargetMarkowitz {
+        /// Portfolio variance: f(w) = w^T Σ w
+        fn val(&self, w: &Mat<f64>) -> f64 {
+            let sigma_w = &self.covariance * w;
+            (w.transpose() * sigma_w)[(0, 0)]
+        }
+
+        /// Gradient: ∇f(w) = 2 Σ w
+        fn val_grad(&self, w: &Mat<f64>) -> (f64, Mat<f64>) {
+            let sigma_w = &self.covariance * w;
+            let val = (w.transpose() * &sigma_w)[(0, 0)];
+            let grad = 2.0 * sigma_w;
+            (val, grad)
+        }
+
+        /// Hessian: ∇²f(w) = 2 Σ (constant for quadratic objectives)
+        fn val_grad_hes(&self, w: &Mat<f64>) -> (f64, Mat<f64>, Mat<f64>) {
+            let (val, grad) = self.val_grad(w);
+            let hes = 2.0 * &self.covariance;
+            (val, grad, hes)
+        }
+    }
+
+    #[test]
+    fn test_markowitz_portfolio_optimization() -> Result<()> {
+        // Three-asset portfolio with realistic covariance structure
+        // Assets: Stock A (high risk), Stock B (medium risk), Bond (low risk)
+        //
+        // Covariance matrix (annualized):
+        //        Stock A   Stock B   Bond
+        // Stock A  0.04     0.01     0.002
+        // Stock B  0.01     0.02     0.001
+        // Bond     0.002    0.001    0.005
+        //
+        // This represents typical correlations: stocks are correlated with each other,
+        // and bonds have lower correlation with stocks (diversification benefit).
+        let covariance = mat![
+            [0.04, 0.01, 0.002],
+            [0.01, 0.02, 0.001],
+            [0.002, 0.001, 0.005]
+        ];
+
+        let n_assets = 3;
+
+        // Bounds: weights between 0 and 1 (no short selling, no leverage)
+        let bound = Some(NLPBound::new(
+            DVector::from_element(n_assets, 0.0),
+            DVector::from_element(n_assets, 1.0),
+        ));
+
+        // Linear equality constraint: weights sum to 1
+        let lin_equal = Some(LinearEqualityConstraint {
+            mat: DMatrix::from_row_slice(1, n_assets, &[1.0, 1.0, 1.0]),
+        });
+
+        let constraints = NLPSolverConstraints {
+            bound,
+            lin_equal,
+            inequal: None,
+        };
+
+        let options = NLPSolverOptions::new();
+        let nlp_target: Arc<_> = NLPTargetMarkowitz::new(covariance).into();
+
+        let solver = NLPSolver::new(options, constraints, nlp_target);
+
+        // Start with equal weights (1/3 each)
+        let w0 = DVector::from_vec(vec![1.0 / 3.0, 1.0 / 3.0, 1.0 / 3.0]);
+        let w_opt = solver.minimize(w0);
+
+        // Analytical solution for minimum variance portfolio:
+        //   w* = (Σ^(-1) * 1) / (1^T * Σ^(-1) * 1)
+        //
+        // For this covariance matrix, the analytical solution is:
+        //   w* ≈ [0.0263, 0.1602, 0.8135]
+        //   variance* ≈ 0.00428
+        //
+        // Since all weights are in (0, 1), the bound constraints are inactive.
+        let w_analytical = DVector::from_vec(vec![0.02628285, 0.16020025, 0.81351690]);
+        let optimal_variance_analytical = 0.00428035;
+
+        // Verify the numerical solution matches the analytical solution
+        assert!(
+            w_opt.relative_eq(&w_analytical, 1e-4, 1e-4),
+            "Numerical solution {:?} should match analytical solution {:?}",
+            w_opt,
+            w_analytical
+        );
+
+        // Verify optimal variance
+        let optimal_variance = {
+            let w = mat![[w_opt[0]], [w_opt[1]], [w_opt[2]]];
+            let cov = mat![
+                [0.04, 0.01, 0.002],
+                [0.01, 0.02, 0.001],
+                [0.002, 0.001, 0.005]
+            ];
+            let sigma_w = &cov * &w;
+            (w.transpose() * sigma_w)[(0, 0)]
+        };
+        assert!(
+            (optimal_variance - optimal_variance_analytical).abs() < 1e-4,
+            "Optimal variance {} should match analytical value {}",
+            optimal_variance,
+            optimal_variance_analytical
+        );
+
+        // Verify constraints are satisfied
+        let weight_sum: f64 = w_opt.iter().sum();
+        assert!(
+            (weight_sum - 1.0).abs() < 1e-4,
+            "Weights should sum to 1, got {}",
+            weight_sum
+        );
+        assert!(
+            w_opt.iter().all(|&w| w >= -1e-6),
+            "All weights should be non-negative"
+        );
+
         Ok(())
     }
 }
