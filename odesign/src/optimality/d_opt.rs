@@ -1,8 +1,6 @@
 use crate::{IntoSVector, LinearModel, MatrixDRows, NLPFunctionTarget, Optimality};
-use faer::{
-    Mat,
-    linalg::solvers::{PartialPivLu, Solve},
-};
+use faer::Mat;
+use faer::linalg::solvers::{PartialPivLu, Solve};
 use nalgebra::SVector;
 use std::sync::Arc;
 
@@ -13,7 +11,6 @@ use std::sync::Arc;
 /// $$ D_{opt} := {(\det \mathcal{M})}^{\frac{1}{n}} $$
 ///
 /// with fisher-information matrix $\mathcal{M}$ and number of coefficients $n$.
-///
 #[derive(Clone)]
 pub struct DOptimality<const D: usize> {
     linear_model: Arc<LinearModel<D>>,

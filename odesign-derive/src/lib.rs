@@ -28,7 +28,8 @@ fn derive_feature_impl(input: DeriveInput) -> syn::Result<proc_macro::TokenStrea
     let dim = dimension.ok_or_else(|| {
         syn::Error::new_spanned(
             name.clone(),
-            "Missing #[dimension = <d>] attribute where d of type usize is equal to input dimension of feature function",
+            "Missing #[dimension = <d>] attribute where d of type usize is equal to input \
+             dimension of feature function",
         )
     })?;
 

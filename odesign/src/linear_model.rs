@@ -1,5 +1,6 @@
 use crate::{Feature, MatrixDRows};
-use faer::{Mat, linalg::solvers::Solve};
+use faer::Mat;
+use faer::linalg::solvers::Solve;
 use faer_ext::{IntoFaer, IntoNalgebra};
 use nalgebra::{DVector, SMatrix, SVector};
 use std::sync::Arc;
@@ -11,9 +12,9 @@ use std::sync::Arc;
 /// feature map $\phi:\mathbb R^m \to\mathbb R^n$ and coefficient $\beta \in \mathbb R^n$.
 ///
 /// ```
-/// use odesign::{Feature, FeatureFunction, LinearModel};
-/// use nalgebra::{SVector};
+/// use nalgebra::SVector;
 /// use num_dual::DualNum;
+/// use odesign::{Feature, FeatureFunction, LinearModel};
 /// use std::sync::Arc;
 ///
 /// // Generic monomial (R^2 -> R) with derivatives by
@@ -72,7 +73,8 @@ impl<const D: usize> LinearModel<D> {
     /// Since we are here in the context of nonlinear programming we are returning always partial
     /// results, such that we can work with the value and gradient. This makes especially sense
     /// in case where we use the Feature derive functionality, we are always computing the value
-    /// in order to calculate the gradient. By using that method design, we can reduce duplicated computations.
+    /// in order to calculate the gradient. By using that method design, we can reduce duplicated
+    /// computations.
     #[inline(always)]
     pub fn val_grad(
         &self,
@@ -102,7 +104,8 @@ impl<const D: usize> LinearModel<D> {
     /// Since we are here in the context of nonlinear programming we are returning always partial
     /// results, such that we can work with the value and gradient. This makes especially sense
     /// in case where we use the Feature derive functionality, we are always computing the value
-    /// in order to calculate the gradient. By using that method design, we can reduce duplicated computations.
+    /// in order to calculate the gradient. By using that method design, we can reduce duplicated
+    /// computations.
     #[inline(always)]
     pub fn val_grad_hes(
         &self,
@@ -176,16 +179,16 @@ impl<const D: usize> LinearModel<D> {
         design_t
     }
 
-    /// Returns the normed global fisher information matrix $\mathcal{M} = \sum_{i=1}^{|D|} w_i \cdot
-    /// \phi(x^{(i)}) \phi(x^{(i)})^T$ with a given dataset $D \in \mathbb R^{m \times
+    /// Returns the normed global fisher information matrix $\mathcal{M} = \sum_{i=1}^{|D|} w_i
+    /// \cdot \phi(x^{(i)}) \phi(x^{(i)})^T$ with a given dataset $D \in \mathbb R^{m \times
     /// |D|}$ and weights $w \in \mathbb R^{|D|}$.
     pub fn fim(&self, data: &MatrixDRows<D>, weights: &Mat<f64>) -> Mat<f64> {
         let design_t = self.design_t(data);
         self.fim_from_design_t(&design_t, weights)
     }
 
-    /// Returns the normed global fisher information matrix $\mathcal{M} = \sum_{i=1}^{|D|} w_i \cdot
-    /// \phi(x^{(i)}) \phi(x^{(i)})^T$ with a given dataset $D \in \mathbb R^{m \times
+    /// Returns the normed global fisher information matrix $\mathcal{M} = \sum_{i=1}^{|D|} w_i
+    /// \cdot \phi(x^{(i)}) \phi(x^{(i)})^T$ with a given dataset $D \in \mathbb R^{m \times
     /// |D|}$ and weights $w \in \mathbb R^{|D|}$.
     pub fn fim_from_design_t(&self, design_t: &Mat<f64>, weights: &Mat<f64>) -> Mat<f64> {
         let mut scaled_design_t = design_t.to_owned();
@@ -199,7 +202,8 @@ impl<const D: usize> LinearModel<D> {
         &scaled_design_t * scaled_design_t.transpose()
     }
 
-    /// Returns the transposed jacobian matrix $J^T \in \mathbb R^{m \times n}$, where $J_{ij}(x) = (\nabla \phi_j(x))_i$.
+    /// Returns the transposed jacobian matrix $J^T \in \mathbb R^{m \times n}$, where $J_{ij}(x) =
+    /// (\nabla \phi_j(x))_i$.
     pub fn jac_t(&self, x: &SVector<f64, D>) -> Mat<f64> {
         let mut m = Mat::<f64>::zeros(D, self.features.len());
         m.col_iter_mut().enumerate().for_each(|(idx, mut c)| {
@@ -215,8 +219,8 @@ impl<const D: usize> LinearModel<D> {
         m
     }
 
-    /// Returns coefficient $\beta$ and root mean square error of the linear regression problem $Y = X
-    /// \beta$ with design matrix $X$.
+    /// Returns coefficient $\beta$ and root mean square error of the linear regression problem $Y =
+    /// X \beta$ with design matrix $X$.
     pub fn fit(&self, data: &MatrixDRows<D>, y: &DVector<f64>) -> (DVector<f64>, f64) {
         let fy = y.view_range(.., ..).into_faer();
         let dm_t = self.design_t(data);

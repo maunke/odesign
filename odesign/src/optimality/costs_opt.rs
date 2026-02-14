@@ -1,4 +1,5 @@
-use crate::{MatrixDRows, NLPFunctionTarget, Optimality, utils::MatrixFind};
+use crate::utils::MatrixFind;
+use crate::{MatrixDRows, NLPFunctionTarget, Optimality};
 use faer::Mat;
 use std::sync::Arc;
 
@@ -14,7 +15,6 @@ use std::sync::Arc;
 /// $$
 ///
 /// with the measured support-vectors $x \in \xi_m$.
-///
 #[derive(Clone)]
 pub struct CostsOptimality<const D: usize> {
     measurements: Arc<MatrixDRows<D>>,
@@ -138,9 +138,7 @@ impl NLPFunctionTarget for DispersionFunction {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::MatrixUnion;
-    use crate::Result;
-    use crate::assert_nlp_target_consistency;
+    use crate::{MatrixUnion, Result, assert_nlp_target_consistency};
 
     #[test]
     fn costs_matrix_mean_consistency() -> Result<()> {

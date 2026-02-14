@@ -1,5 +1,6 @@
 use crate::{Error, IntoSVector, LinearModel, MatrixDRows, NLPFunctionTarget, Optimality, Result};
-use faer::{Mat, linalg::solvers::Solve};
+use faer::Mat;
+use faer::linalg::solvers::Solve;
 use faer_ext::IntoFaer;
 use nalgebra::{DVector, SVector};
 use std::sync::Arc;
@@ -17,7 +18,6 @@ use std::sync::Arc;
 /// we can set $c^T = (0,0,...,0,1)$ in order to minimize the variance of the estimator
 /// of $\beta_n$ in order to build an optimal design in sense of the null hypothesis
 /// $H_0: \beta_n = 0$.
-///
 #[derive(Clone)]
 pub struct COptimality<const D: usize> {
     linear_model: Arc<LinearModel<D>>,

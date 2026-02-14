@@ -15,7 +15,8 @@ pub enum Error {
     },
     /// Minimal dimensional distance requirement is violated.
     #[error(
-        "min distance between vectors {vector1} and {vector2} found on dim {dim} with {distance} but should > {gt_distance}"
+        "min distance between vectors {vector1} and {vector2} found on dim {dim} with {distance} \
+         but should > {gt_distance}"
     )]
     MinDistanceBetweenVectors {
         /// Name of vector1.
@@ -31,7 +32,8 @@ pub enum Error {
     },
     /// Two given tensors do not have the same shape.
     #[error(
-        "mat {mat1} with shape {shape1:?} and {mat2} with {shape2:?} have different len on dim {dim1} and {dim2}"
+        "mat {mat1} with shape {shape1:?} and {mat2} with {shape2:?} have different len on dim \
+         {dim1} and {dim2}"
     )]
     ShapeMismatch {
         /// Name of matrix 1.

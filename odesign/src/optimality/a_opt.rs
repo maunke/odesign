@@ -1,5 +1,6 @@
 use crate::{IntoSVector, LinearModel, MatrixDRows, NLPFunctionTarget, Optimality};
-use faer::{Mat, Side, linalg::solvers::DenseSolveCore};
+use faer::linalg::solvers::DenseSolveCore;
+use faer::{Mat, Side};
 use std::sync::Arc;
 
 #[cfg_attr(doc, katexit::katexit)]
@@ -9,7 +10,6 @@ use std::sync::Arc;
 /// $$ A_{opt} := \frac{n}{\text{tr}\mathcal{M}^{-1}} $$
 ///
 /// with fisher-information matrix $\mathcal{M}$ and number of coefficients $n$.
-///
 #[derive(Clone)]
 pub struct AOptimality<const D: usize> {
     linear_model: Arc<LinearModel<D>>,

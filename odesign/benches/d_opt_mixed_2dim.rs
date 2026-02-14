@@ -4,7 +4,8 @@ use num_dual::DualNum;
 use odesign::{
     DOptimality, Feature, FeatureFunction, FeatureSet, LinearModel, OptimalDesign, Result,
 };
-use std::{sync::Arc, time::Duration};
+use std::sync::Arc;
+use std::time::Duration;
 
 #[derive(Feature)]
 #[dimension = 2]

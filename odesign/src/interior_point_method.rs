@@ -1,4 +1,5 @@
-use faer::{Mat, linalg::solvers::Solve, unzip, zip};
+use faer::linalg::solvers::Solve;
+use faer::{Mat, unzip, zip};
 use faer_ext::{IntoFaer, IntoNalgebra};
 use nalgebra::{DMatrix, DVector};
 use std::sync::Arc;
@@ -194,7 +195,8 @@ struct NLPPreComputation {
     lin_equal_newton_mat: Option<Mat<f64>>,
 }
 
-/// Non linear programming solver that minimizes [NLPFunctionTarget] within given [NLPSolverConstraints].
+/// Non linear programming solver that minimizes [NLPFunctionTarget] within given
+/// [NLPSolverConstraints].
 pub struct NLPSolver {
     options: NLPSolverOptions,
     constraints: NLPSolverConstraints,

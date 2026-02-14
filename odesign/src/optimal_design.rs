@@ -1,13 +1,15 @@
+use crate::interior_point_method::{InequalityConstraint, NLPBound, VoronoiConstraint};
 use crate::{
     Error, Feature, Grid, IntoSVector, LinearEqualityConstraint, MatrixDRows, NLPFunctionTarget,
     NLPSolver, NLPSolverConstraints, NLPSolverOptions, Optimalities, Optimality,
     OptimalityMeasures, Result,
-    interior_point_method::{InequalityConstraint, NLPBound, VoronoiConstraint},
 };
 use faer_ext::IntoFaer;
 use nalgebra::{DMatrix, DVector, SVector};
 use rayon::prelude::*;
-use std::{fmt::Display, iter::zip, sync::Arc};
+use std::fmt::Display;
+use std::iter::zip;
+use std::sync::Arc;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct DesignCrit {
@@ -54,8 +56,8 @@ impl<const D: usize> DiscreteDesign<D> {
     }
 }
 
-/// Contains the column-orientated support vectors and their continuous weights. Additionally the crit
-/// is used to set the filter and collapse constraints.
+/// Contains the column-orientated support vectors and their continuous weights. Additionally the
+/// crit is used to set the filter and collapse constraints.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Design<const D: usize> {
     /// The i-th weights element relates to the i-th column in support vector matrix.
@@ -778,15 +780,9 @@ mod tests {
         let od_display = format!("{od}");
         assert_eq!(
             od_display,
-            "---------- Design ----------\n\
-            Weight\tSupport Vector\n\
-            0.5000\t[ +0.0000 ]\n\
-            0.5000\t[ +1.0000 ]\n\
-            -------- Statistics --------\n\
-            Optimality measure: -0.000000\n\
-            No. support vectors: 2\n\
-            Iterations: 0\n\
-            ----------------------------"
+            "---------- Design ----------\nWeight\tSupport Vector\n0.5000\t[ +0.0000 ]\n0.5000\t[ \
+             +1.0000 ]\n-------- Statistics --------\nOptimality measure: -0.000000\nNo. support \
+             vectors: 2\nIterations: 0\n----------------------------"
                 .to_string()
         );
         Ok(())
