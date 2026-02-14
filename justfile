@@ -1,41 +1,40 @@
 bench:
-  cargo bench
+    cargo bench
 
 test:
-  echo "Run tests.."
-  cargo nextest run --release
+    echo "Run tests.."
+    cargo nextest run --release
 
 format-check:
-  echo "Run format check.."
-  cargo fmt --check
+    echo "Run format check.."
+    cargo +nightly fmt --check
 
 format:
-  cargo fmt
+    cargo +nightly fmt
 
 lint:
-  echo "Run clippy.."
-  cargo clippy
+    echo "Run clippy.."
+    cargo clippy
 
 test-all: format-check lint test
 
 book-build:
-  mdbook build odesign-book
+    mdbook build odesign-book
 
 book-build-tar: book-build
-  tar --exclude='./odesign-book/src/' -cf ./deploy.tar ./captain-definition ./odesign-book/*
+    tar --exclude='./odesign-book/src/' -cf ./deploy.tar ./captain-definition ./odesign-book/*
 
 book-watch:
-  mdbook watch odesign-book --open
+    mdbook watch odesign-book --open
 
 book-publish: book-build-tar
-  caprover deploy -t ./deploy.tar -a odesign
+    caprover deploy -t ./deploy.tar -a odesign
 
 run-all-examples:
-  #!/bin/sh
-  for dir in ./odesign-examples/examples/*/
-  do
-    dir=${dir%*/}
-    example=${dir##*/}
-    cargo run --example $example --release
-  done
-
+    #!/bin/sh
+    for dir in ./odesign-examples/examples/*/
+    do
+      dir=${dir%*/}
+      example=${dir##*/}
+      cargo run --example $example --release
+    done
