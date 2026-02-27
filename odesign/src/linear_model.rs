@@ -44,8 +44,29 @@ use std::sync::Arc;
 /// ```
 pub struct LinearModel<const D: usize> {
     /// Ordered list of features, building the feature map $\phi:\mathbb R^m \to\mathbb R^n$, where
-    /// n is the number of features
+    /// n is the number of features.
     pub features: Vec<Arc<dyn Feature<D> + Send + Sync>>,
+}
+
+/// Two [LinearModel] instances with the same features are considered to be equal, independent
+/// of the ordering.
+impl<const D: usize> PartialEq for LinearModel<D> {
+    fn eq(&self, other: &Self) -> bool {
+        if self.features.len() != other.features.len() {
+            return false;
+        }
+        self.features
+            .iter()
+            .map(|f| {
+                for other_f in other.features.iter() {
+                    if Arc::ptr_eq(f, other_f) {
+                        return true;
+                    }
+                }
+                false
+            })
+            .all(|b| b)
+    }
 }
 
 impl<const D: usize> LinearModel<D> {
@@ -353,6 +374,51 @@ mod tests {
         let (coeff, rmse) = polynomial.fit(&data, &y);
         assert!(rmse < 1e-10);
         assert!(coeff.relative_eq(&DVector::from_vec(vec![2., 1., 1.]), EQ_EPS, EQ_MAX_REL));
+        Ok(())
+    }
+
+    #[test]
+    fn test_linear_model_comparison_eq() -> Result<()> {
+        let features = get_polynomial().features;
+
+        // Same order of features.
+        let lm_a = LinearModel::new(features.clone());
+        let lm_b = LinearModel::new(features.clone());
+        assert!(lm_a == lm_b);
+
+        // Different order of features
+        let feat_1 = features.get(0).unwrap();
+        let feat_2 = features.get(1).unwrap();
+
+        let lm_a = LinearModel::new(vec![feat_1.clone(), feat_2.clone()]);
+        let lm_b = LinearModel::new(vec![feat_2.clone(), feat_1.clone()]);
+
+        assert!(lm_a == lm_b);
+        Ok(())
+    }
+
+    #[test]
+    fn test_linear_model_comparison_ne() -> Result<()> {
+        let features = get_polynomial().features;
+        // Case: unequal number of features
+        let lm_a = LinearModel::new(features.clone());
+        let lm_b = LinearModel::new(vec![]);
+        assert!(lm_a != lm_b);
+
+        let lm_a = LinearModel::new(vec![]);
+        let lm_b = LinearModel::new(features.clone());
+        assert!(lm_a != lm_b);
+
+        // Case: different features
+        let feat_1 = features.get(0).unwrap();
+        let feat_2 = features.get(1).unwrap();
+        let feat_3 = features.get(2).unwrap();
+
+        let lm_a = LinearModel::new(vec![feat_1.clone(), feat_2.clone()]);
+        let lm_b = LinearModel::new(vec![feat_2.clone(), feat_3.clone()]);
+
+        assert!(lm_a != lm_b);
+
         Ok(())
     }
 }
