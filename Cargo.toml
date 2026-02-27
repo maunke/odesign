@@ -24,6 +24,8 @@ num-dual = "0.11.0"
 thiserror = "2.0.11"
 odesign = { path = "./odesign", version = "0.1.9" }
 odesign-derive = { path = "./odesign-derive", version = "0.1.9" }
+rand = "0.10.0"
+
 
 [profile.release]
 opt-level = 3

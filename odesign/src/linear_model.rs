@@ -3,6 +3,7 @@ use faer::Mat;
 use faer::linalg::solvers::Solve;
 use faer_ext::{IntoFaer, IntoNalgebra};
 use nalgebra::{DVector, SMatrix, SVector};
+use rand::RngExt;
 use std::sync::Arc;
 
 #[cfg_attr(doc, katexit::katexit)]
@@ -252,6 +253,34 @@ impl<const D: usize> LinearModel<D> {
             (1. / data.shape().1 as f64).sqrt() * (dm_t.transpose() * &coeff - fy).norm_l2();
         (coeff.as_ref().into_nalgebra().column(0).into(), rmse)
     }
+
+    /// Proves the dependency of all variables within lower and upper bound via monte-carlo
+    /// simulation.
+    pub fn dimension_dependency_check(
+        &self,
+        lower_bound: SVector<f64, D>,
+        upper_bound: SVector<f64, D>,
+    ) -> bool {
+        let mut rng = rand::rng();
+        let max_proof_dependency_iter = 10_000;
+        let coeff = DVector::from_element(self.features.len(), 1.0);
+        let mut dependencies = [false; D];
+        let mut check_dependency = false;
+        let mut iter = 0;
+        while iter < max_proof_dependency_iter && !check_dependency {
+            iter += 1;
+            let x =
+                lower_bound + (upper_bound - lower_bound).map(|d| rng.random_range(0.0..1.0) * d);
+            let (_, grad) = self.val_grad(&x, &coeff);
+            grad.iter().enumerate().for_each(|(idx, x)| {
+                if x.abs() > 0.0 {
+                    dependencies[idx] = true;
+                }
+            });
+            check_dependency = dependencies.iter().all(|&x| x);
+        }
+        check_dependency
+    }
 }
 
 #[cfg(test)]
@@ -374,6 +403,23 @@ mod tests {
         let (coeff, rmse) = polynomial.fit(&data, &y);
         assert!(rmse < 1e-10);
         assert!(coeff.relative_eq(&DVector::from_vec(vec![2., 1., 1.]), EQ_EPS, EQ_MAX_REL));
+        Ok(())
+    }
+
+    #[test]
+    fn test_dimension_dependency_check() -> Result<()> {
+        // Dependent
+        let init_model_features = get_polynomial().features;
+        let init_model: Arc<_> = LinearModel::new(init_model_features).into();
+        let lower = Vector2::new(-1.0, -1.0);
+        let upper = Vector2::new(1.0, 1.0);
+        assert!(init_model.dimension_dependency_check(lower, upper));
+        // Not dependent
+        let init_model_features = get_polynomial().features.swap_remove(0);
+        let init_model: Arc<_> = LinearModel::new(vec![init_model_features]).into();
+        let lower = Vector2::new(-1.0, -1.0);
+        let upper = Vector2::new(1.0, 1.0);
+        assert!(!init_model.dimension_dependency_check(lower, upper));
         Ok(())
     }
 

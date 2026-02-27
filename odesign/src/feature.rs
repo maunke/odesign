@@ -44,7 +44,7 @@ mod tests {
     use nalgebra::{Matrix2, Vector2};
     use num_dual::DualNum;
     use odesign_derive::Feature;
-    use rand::Rng;
+    use rand::RngExt;
 
     const EQ_EPS: f64 = 1e-8;
     const EQ_MAX_REL: f64 = 1e-8;
