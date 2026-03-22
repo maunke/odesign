@@ -56,17 +56,14 @@ impl<const D: usize> PartialEq for LinearModel<D> {
         if self.features.len() != other.features.len() {
             return false;
         }
-        self.features
-            .iter()
-            .map(|f| {
-                for other_f in other.features.iter() {
-                    if Arc::ptr_eq(f, other_f) {
-                        return true;
-                    }
+        self.features.iter().all(|f| {
+            for other_f in other.features.iter() {
+                if Arc::ptr_eq(f, other_f) {
+                    return true;
                 }
-                false
-            })
-            .all(|b| b)
+            }
+            false
+        })
     }
 }
 
