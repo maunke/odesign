@@ -330,6 +330,12 @@ pub struct OptimalDesignCriteria {
     pub measure_precision: f64,
     /// Maximal number of iterations
     pub max_iter: usize,
+    /// Support vector backtracking line search alpha factor.
+    pub supp_backtracking_alpha: f64,
+    /// Support vector backtracking line search beta factor.
+    pub supp_backtracking_beta: f64,
+    /// Support vector backtracking max iterations.
+    pub supp_backtracking_max_iter: usize,
 }
 
 impl Default for OptimalDesignCriteria {
@@ -338,6 +344,9 @@ impl Default for OptimalDesignCriteria {
             supp_precision: 1e-5,
             measure_precision: 1e-5,
             max_iter: 100,
+            supp_backtracking_alpha: 0.5,
+            supp_backtracking_beta: 0.5,
+            supp_backtracking_max_iter: 10,
         }
     }
 }
@@ -353,7 +362,6 @@ pub struct OptimalDesign<const D: usize> {
     constraint: DesignConstraint<D>,
     criteria: OptimalDesignCriteria,
     iterations: usize,
-    voronoi_phase: bool,
 }
 
 impl<const D: usize> Display for OptimalDesign<D> {
@@ -395,7 +403,6 @@ impl<const D: usize> Default for OptimalDesign<D> {
         let constraint = DesignConstraint::Bound(bound);
         let criteria = OptimalDesignCriteria::default();
         let iterations = 0;
-        let voronoi_phase = true;
         Self {
             optimalities,
             weights,
@@ -403,7 +410,6 @@ impl<const D: usize> Default for OptimalDesign<D> {
             constraint,
             criteria,
             iterations,
-            voronoi_phase,
         }
     }
 }
@@ -495,42 +501,69 @@ impl<const D: usize> OptimalDesign<D> {
     /// measures.
     pub fn solve(&mut self) -> &Design<D> {
         self.minimize_weights();
+        let mut local_best_measure = self.measure();
+
+        let mut best_measure = self.measure();
+        let mut best_design = self.design.clone();
 
         let mut iter: usize = 0;
         let mut measure_proof = true;
-        let mut distance_proof = true;
-        while iter < self.criteria.max_iter && measure_proof && distance_proof {
+        while iter < self.criteria.max_iter && measure_proof {
             iter += 1;
+
             let old_design = self.design.clone();
-            let old_measure = self.measure();
-            let old_supp_size = old_design.weights.len();
+
             self.minimize_supp();
-            let supp_diff = (&old_design.supp - &self.design.supp).norm();
             self.design.collapse();
             self.minimize_weights();
+            let min_supp_design = self.design.clone();
+            let min_supp_design_measure = self.measure();
 
-            let measure = self.measure();
-            let supp_size = self.design.weights.len();
+            let mut candidate_measure = self.measure();
 
-            if measure.is_nan()
-                || supp_size >= old_supp_size
-                    && (measure <= old_measure
-                        || (measure - old_measure).abs()
-                            < self.criteria.measure_precision * old_measure)
+            // Backtracking line search on measure along the locally optimized support vector design
+            // differences.
+            if old_design.supp.ncols() == self.design.supp.ncols() {
+                let supp_delta = &self.design.supp - &old_design.supp;
+                let mut t = self.criteria.supp_backtracking_alpha;
+                for _ in 0..self.criteria.supp_backtracking_max_iter {
+                    self.design.supp = &old_design.supp + t * &supp_delta;
+                    self.design.collapse();
+                    self.minimize_weights();
+                    let measure = self.measure();
+                    if measure > candidate_measure {
+                        candidate_measure = measure;
+                        break;
+                    } else {
+                        self.design = min_supp_design.clone();
+                    }
+                    t *= self.criteria.supp_backtracking_beta;
+                }
+            }
+
+            if candidate_measure < min_supp_design_measure {
+                self.design = min_supp_design;
+                candidate_measure = min_supp_design_measure;
+            }
+
+            if candidate_measure > best_measure {
+                best_measure = candidate_measure;
+                best_design = self.design.clone();
+            }
+
+            if candidate_measure.is_nan() {
+                measure_proof = false;
+                self.design = old_design.clone();
+            } else if (candidate_measure - local_best_measure).abs()
+                <= self.criteria.measure_precision * local_best_measure
             {
                 measure_proof = false;
-                self.design = old_design;
-            } else if supp_diff < self.design.supp.norm() * self.criteria.supp_precision {
-                distance_proof = false;
+            } else {
+                local_best_measure = candidate_measure;
             }
-
-            if (!distance_proof || !measure_proof) && self.voronoi_phase {
-                self.voronoi_phase = false;
-                distance_proof = true;
-                measure_proof = true;
-            }
+            self.iterations = iter;
         }
-        self.iterations = iter;
+        self.design = best_design;
         &self.design
     }
 
@@ -607,42 +640,16 @@ impl<const D: usize> OptimalDesign<D> {
     fn minimize_supp_x(&self, x0: SVector<f64, D>, x_id: usize) -> DVector<f64> {
         let mut inequal = Vec::new();
         let mut bound: Option<NLPBound> = None;
-        if self.voronoi_phase {
-            let voronoi = InequalityConstraint::Voronoi(VoronoiConstraint::new(
-                self.design.supp.view_range(.., ..).into_faer().to_owned(),
-                x_id,
-            ));
-            inequal.push(voronoi);
-        }
+        let voronoi = InequalityConstraint::Voronoi(VoronoiConstraint::new(
+            self.design.supp.view_range(.., ..).into_faer().to_owned(),
+            x_id,
+        ));
+        inequal.push(voronoi);
         match &self.constraint {
             DesignConstraint::Bound(b) => {
-                // find smallest distance to other support vectors
-                let smallest_distance =
-                    self.design
-                        .supp
-                        .column_iter()
-                        .enumerate()
-                        .fold(f64::MAX, |dist, (idx, s)| {
-                            if idx != x_id {
-                                let d = (s - x0).norm();
-                                if d < dist { d } else { dist }
-                            } else {
-                                dist
-                            }
-                        });
-                let mut local_lower = x0;
-                local_lower.iter_mut().for_each(|v| {
-                    *v -= smallest_distance;
-                });
-                let mut local_upper = x0;
-                local_upper.iter_mut().for_each(|v| {
-                    *v += smallest_distance;
-                });
-                let local_design_bound = DesignBound::new(local_lower, local_upper).unwrap();
-                let design_bound = b.intersection(&local_design_bound);
                 bound = Some(NLPBound::new(
-                    DVector::from_column_slice(design_bound.lower.as_slice()),
-                    DVector::from_column_slice(design_bound.upper.as_slice()),
+                    DVector::from_column_slice(b.lower.as_slice()),
+                    DVector::from_column_slice(b.upper.as_slice()),
                 ));
             }
             DesignConstraint::Custom(c) => {

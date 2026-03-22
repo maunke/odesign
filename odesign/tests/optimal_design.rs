@@ -96,7 +96,7 @@ fn test_optimal_design_dcrit_poly_3() -> Result<()> {
     let design = od.solve();
 
     let weights_rslt = DVector::from_element(4, 0.25);
-    let supp_rslt = MatrixDRows::from_vec(vec![-1., -0.45, 0.45, 1.]);
+    let supp_rslt = MatrixDRows::from_vec(vec![-1., -1. / 5.0.sqrt(), 1. / 5.0.sqrt(), 1.]);
 
     assert!(
         design
