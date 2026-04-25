@@ -1,4 +1,4 @@
-use crate::{Feature, MatrixDRows};
+use crate::{FeatureSet, MatrixDRows};
 use faer::Mat;
 use faer::linalg::solvers::Solve;
 use faer_ext::{IntoFaer, IntoNalgebra};
@@ -15,8 +15,7 @@ use std::sync::Arc;
 /// ```
 /// use nalgebra::SVector;
 /// use num_dual::DualNum;
-/// use odesign::{Feature, FeatureFunction, LinearModel};
-/// use std::sync::Arc;
+/// use odesign::{Feature, FeatureFunction, FeatureSet, LinearModel};
 ///
 /// // Generic monomial (R^2 -> R) with derivatives by
 /// // providing its feature function x^i * y^j only
@@ -37,27 +36,25 @@ use std::sync::Arc;
 /// let monomial_b = Monomial { i: 1, j: 1 };
 /// let monomial_c = Monomial { i: 2, j: 2 };
 ///
-/// let lm = LinearModel::new(vec![
-///     Arc::new(monomial_a),
-///     Arc::new(monomial_b),
-///     Arc::new(monomial_c),
-/// ]);
+/// let feature_set = FeatureSet::from(vec![monomial_a, monomial_b, monomial_c]);
+///
+/// let lm = LinearModel::from(feature_set);
 /// ```
 pub struct LinearModel<const D: usize> {
-    /// Ordered list of features, building the feature map $\phi:\mathbb R^m \to\mathbb R^n$, where
-    /// n is the number of features.
-    pub features: Vec<Arc<dyn Feature<D> + Send + Sync>>,
+    // Ordered list of features, building the feature map $\phi:\mathbb R^m \to\mathbb R^n$, where
+    // n is the number of features.
+    feature_set: FeatureSet<D>,
 }
 
 /// Two [LinearModel] instances with the same features are considered to be equal, independent
 /// of the ordering.
 impl<const D: usize> PartialEq for LinearModel<D> {
     fn eq(&self, other: &Self) -> bool {
-        if self.features.len() != other.features.len() {
+        if self.feature_set.len() != other.feature_set.len() {
             return false;
         }
-        self.features.iter().all(|f| {
-            for other_f in other.features.iter() {
+        self.feature_set.iter().all(|f| {
+            for other_f in other.feature_set.iter() {
                 if Arc::ptr_eq(f, other_f) {
                     return true;
                 }
@@ -67,19 +64,27 @@ impl<const D: usize> PartialEq for LinearModel<D> {
     }
 }
 
+impl<const D: usize> From<FeatureSet<D>> for LinearModel<D> {
+    fn from(feature_set: FeatureSet<D>) -> Self {
+        Self { feature_set }
+    }
+}
+
+impl<const D: usize> From<LinearModel<D>> for FeatureSet<D> {
+    fn from(model: LinearModel<D>) -> Self {
+        model.feature_set
+    }
+}
+
 impl<const D: usize> LinearModel<D> {
-    /// Creates linear model by providing the feature map $\phi:\mathbb R^m \to\mathbb R^n$.
-    ///
-    /// Since we are here in the context of optimal designs, we are not interested in providing the
-    /// coefficient $\beta$ in order to define a linear model. We are moving that part to the
-    /// methods.
-    pub fn new(features: Vec<Arc<dyn Feature<D> + Send + Sync>>) -> Self {
-        Self { features }
+    /// Number of features in the model.
+    pub fn n_features(&self) -> usize {
+        self.feature_set.len()
     }
 
     /// Returns the value $y = \phi^T \beta$.
     pub fn val(&self, x: &SVector<f64, D>, coefficients: &DVector<f64>) -> f64 {
-        self.features
+        self.feature_set
             .iter()
             .enumerate()
             .map(|(idx, f)| f.val(x) * coefficients[idx])
@@ -100,7 +105,7 @@ impl<const D: usize> LinearModel<D> {
         x: &SVector<f64, D>,
         coefficients: &DVector<f64>,
     ) -> (f64, SVector<f64, D>) {
-        self.features
+        self.feature_set
             .iter()
             .enumerate()
             .map(|(idx, t)| {
@@ -131,7 +136,7 @@ impl<const D: usize> LinearModel<D> {
         x: &SVector<f64, D>,
         coefficients: &DVector<f64>,
     ) -> (f64, SVector<f64, D>, SMatrix<f64, D, D>) {
-        self.features
+        self.feature_set
             .iter()
             .enumerate()
             .map(|(idx, t)| {
@@ -152,13 +157,13 @@ impl<const D: usize> LinearModel<D> {
 
     /// Returns the feature map $\phi(x)$.
     pub fn feature_vec(&self, x: &SVector<f64, D>) -> Mat<f64> {
-        let mut feature_vec = Mat::<f64>::zeros(self.features.len(), 1);
+        let mut feature_vec = Mat::<f64>::zeros(self.feature_set.len(), 1);
         feature_vec
             .col_mut(0)
             .iter_mut()
-            .enumerate()
-            .for_each(|(idx, r)| {
-                *r = self.features[idx].val(x);
+            .zip(self.feature_set.iter())
+            .for_each(|(r, feat)| {
+                *r = feat.val(x);
             });
         feature_vec
     }
@@ -167,7 +172,7 @@ impl<const D: usize> LinearModel<D> {
     /// $(H_{\phi_k})_{ij} =\frac{\partial^2 \phi_k}{\partial x_i \partial x_j}(x), \forall i,j \in
     /// \[ m \]$.
     pub fn feature_vec_hessian(&self, x: &SVector<f64, D>) -> Vec<Mat<f64>> {
-        self.features
+        self.feature_set
             .iter()
             .map(|f| {
                 f.val_grad_hes(x)
@@ -184,17 +189,14 @@ impl<const D: usize> LinearModel<D> {
     /// = \phi_j(x^{(i)}), i \in \[ |D| \], j \in \[ n\]$, where $x^{(i)}$ represents the i-th
     /// column of the given data matrix.
     pub fn design_t(&self, data: &MatrixDRows<D>) -> Mat<f64> {
-        let no_features = self.features.len();
+        let no_features = self.feature_set.len();
         let mut design_t = Mat::<f64>::zeros(no_features, data.ncols());
-        design_t
-            .col_iter_mut()
-            .enumerate()
-            .for_each(|(j, mut col)| {
-                let x = data.column(j).into();
-                for i in 0..col.nrows() {
-                    col[i] = self.features[i].val(&x);
-                }
-            });
+        design_t.col_iter_mut().enumerate().for_each(|(j, col)| {
+            let x = data.column(j).into();
+            col.iter_mut()
+                .zip(self.feature_set.iter())
+                .for_each(|(c, f)| *c = f.val(&x));
+        });
         design_t
     }
 
@@ -224,17 +226,12 @@ impl<const D: usize> LinearModel<D> {
     /// Returns the transposed jacobian matrix $J^T \in \mathbb R^{m \times n}$, where $J_{ij}(x) =
     /// (\nabla \phi_j(x))_i$.
     pub fn jac_t(&self, x: &SVector<f64, D>) -> Mat<f64> {
-        let mut m = Mat::<f64>::zeros(D, self.features.len());
-        m.col_iter_mut().enumerate().for_each(|(idx, mut c)| {
-            c.copy_from(
-                self.features[idx]
-                    .val_grad(x)
-                    .1
-                    .column(0)
-                    .into_faer()
-                    .col(0),
-            );
-        });
+        let mut m = Mat::<f64>::zeros(D, self.feature_set.len());
+        m.col_iter_mut()
+            .zip(self.feature_set.iter())
+            .for_each(|(mut c, f)| {
+                c.copy_from(f.val_grad(x).1.column(0).into_faer().col(0));
+            });
         m
     }
 
@@ -260,7 +257,7 @@ impl<const D: usize> LinearModel<D> {
     ) -> bool {
         let mut rng = rand::rng();
         let max_proof_dependency_iter = 10_000;
-        let coeff = DVector::from_element(self.features.len(), 1.0);
+        let coeff = DVector::from_element(self.feature_set.len(), 1.0);
         let mut dependencies = [false; D];
         let mut check_dependency = false;
         let mut iter = 0;
@@ -283,7 +280,7 @@ impl<const D: usize> LinearModel<D> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{FeatureFunction, Result};
+    use crate::{Feature, FeatureFunction, Result};
     use faer::mat;
     use nalgebra::{Matrix2, Vector2};
     use num_dual::DualNum;
@@ -308,11 +305,8 @@ mod tests {
         let monomial_a = Monomial { i: 0, j: 0 };
         let monomial_b = Monomial { i: 1, j: 1 };
         let monomial_c = Monomial { i: 2, j: 2 };
-        LinearModel::new(vec![
-            Arc::new(monomial_a),
-            Arc::new(monomial_b),
-            Arc::new(monomial_c),
-        ])
+
+        FeatureSet::from(vec![monomial_a, monomial_b, monomial_c]).into()
     }
 
     #[test]
@@ -406,14 +400,14 @@ mod tests {
     #[test]
     fn test_dimension_dependency_check() -> Result<()> {
         // Dependent
-        let init_model_features = get_polynomial().features;
-        let init_model: Arc<_> = LinearModel::new(init_model_features).into();
+        let init_model_feature_set: FeatureSet<_> = get_polynomial().into();
+        let init_model = LinearModel::from(init_model_feature_set.clone());
         let lower = Vector2::new(-1.0, -1.0);
         let upper = Vector2::new(1.0, 1.0);
         assert!(init_model.dimension_dependency_check(lower, upper));
         // Not dependent
-        let init_model_features = get_polynomial().features.swap_remove(0);
-        let init_model: Arc<_> = LinearModel::new(vec![init_model_features]).into();
+        let constant_feature_fs = init_model_feature_set.subset([0])?;
+        let init_model = LinearModel::from(constant_feature_fs);
         let lower = Vector2::new(-1.0, -1.0);
         let upper = Vector2::new(1.0, 1.0);
         assert!(!init_model.dimension_dependency_check(lower, upper));
@@ -422,19 +416,19 @@ mod tests {
 
     #[test]
     fn test_linear_model_comparison_eq() -> Result<()> {
-        let features = get_polynomial().features;
+        let feature_set: FeatureSet<2> = get_polynomial().into();
 
         // Same order of features.
-        let lm_a = LinearModel::new(features.clone());
-        let lm_b = LinearModel::new(features.clone());
+        let lm_a = LinearModel::from(feature_set.clone());
+        let lm_b = LinearModel::from(feature_set.clone());
         assert!(lm_a == lm_b);
 
         // Different order of features
-        let feat_1 = features.get(0).unwrap();
-        let feat_2 = features.get(1).unwrap();
+        let feat_1 = feature_set.clone();
+        let feat_2 = feature_set.subset((0..feature_set.len()).rev())?;
 
-        let lm_a = LinearModel::new(vec![feat_1.clone(), feat_2.clone()]);
-        let lm_b = LinearModel::new(vec![feat_2.clone(), feat_1.clone()]);
+        let lm_a = LinearModel::from(feat_1);
+        let lm_b = LinearModel::from(feat_2);
 
         assert!(lm_a == lm_b);
         Ok(())
@@ -442,23 +436,18 @@ mod tests {
 
     #[test]
     fn test_linear_model_comparison_ne() -> Result<()> {
-        let features = get_polynomial().features;
+        let feature_set: FeatureSet<2> = get_polynomial().into();
         // Case: unequal number of features
-        let lm_a = LinearModel::new(features.clone());
-        let lm_b = LinearModel::new(vec![]);
-        assert!(lm_a != lm_b);
-
-        let lm_a = LinearModel::new(vec![]);
-        let lm_b = LinearModel::new(features.clone());
+        let lm_a = LinearModel::from(feature_set.clone());
+        let lm_b = LinearModel::from(feature_set.subset(1..feature_set.len())?);
         assert!(lm_a != lm_b);
 
         // Case: different features
-        let feat_1 = features.get(0).unwrap();
-        let feat_2 = features.get(1).unwrap();
-        let feat_3 = features.get(2).unwrap();
+        let lm_a = LinearModel::from(feature_set.subset(0..1)?);
+        let lm_b = LinearModel::from(feature_set.subset(1..2)?);
 
-        let lm_a = LinearModel::new(vec![feat_1.clone(), feat_2.clone()]);
-        let lm_b = LinearModel::new(vec![feat_2.clone(), feat_3.clone()]);
+        let lm_a = LinearModel::from(lm_a);
+        let lm_b = LinearModel::from(lm_b);
 
         assert!(lm_a != lm_b);
 

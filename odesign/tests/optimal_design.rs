@@ -3,7 +3,7 @@ use num_dual::*;
 use odesign::{
     AOptimality, COptimality, CostsOptimality, CustomDesignBound, DOptimality, Design, DesignBound,
     Feature, FeatureFunction, FeatureSet, Grid, LinearModel, MatrixDRows, MatrixUnion,
-    OptimalDesign, OptimalDesignCriteria, Optimalities, Optimality, Result, WeightedOptimality,
+    OptimalDesign, OptimalDesignCriteria, Optimalities, Result, WeightedOptimality,
 };
 use std::sync::Arc;
 
@@ -36,11 +36,11 @@ impl FeatureFunction<1> for CustomBoundConstraint {
 fn test_optimal_design_cdcrit_poly_2() -> Result<()> {
     let mut fs = FeatureSet::new();
     for i in 0..3 {
-        let c: Arc<_> = Monomial { i }.into();
+        let c = Monomial { i };
         fs.push(c);
     }
 
-    let lm: Arc<_> = LinearModel::new(fs.features).into();
+    let lm: Arc<_> = LinearModel::from(fs).into();
 
     let q: SVector<usize, 1> = Vector1::new(101);
     let lower = Vector1::new(-1.);
@@ -80,11 +80,11 @@ fn test_optimal_design_dcrit_poly_3() -> Result<()> {
     let mut fs = FeatureSet::new();
 
     for i in 0..4 {
-        let c: Arc<_> = Monomial { i }.into();
+        let c = Monomial { i };
         fs.push(c);
     }
 
-    let lm = LinearModel::new(fs.features);
+    let lm = LinearModel::from(fs);
 
     let q: SVector<usize, 1> = Vector1::new(101);
     let lower = Vector1::new(-1.);
@@ -113,11 +113,11 @@ fn test_optimal_design_dcrit_poly_3() -> Result<()> {
 fn test_optimal_design_dcrit_poly_1() -> Result<()> {
     let mut fs = FeatureSet::new();
     for i in 0..2 {
-        let c: Arc<_> = Monomial { i }.into();
+        let c = Monomial { i };
         fs.push(c);
     }
 
-    let lm = LinearModel::new(fs.features);
+    let lm = LinearModel::from(fs);
 
     let q: SVector<usize, 1> = Vector1::new(101);
     let lower = Vector1::new(-1.);
@@ -146,11 +146,11 @@ fn test_optimal_design_dcrit_poly_1() -> Result<()> {
 fn test_optimal_design_ccrit() -> Result<()> {
     let mut fs = FeatureSet::new();
     for i in 0..3 {
-        let c: Arc<_> = Monomial { i }.into();
+        let c = Monomial { i };
         fs.push(c);
     }
 
-    let lm = LinearModel::new(fs.features);
+    let lm = LinearModel::from(fs);
 
     let q: SVector<usize, 1> = Vector1::new(101);
     let lower = Vector1::new(-1.);
@@ -180,11 +180,11 @@ fn test_optimal_design_ccrit() -> Result<()> {
 fn test_optimal_design_acrit_poly_1() -> Result<()> {
     let mut fs = FeatureSet::new();
     for i in 0..3 {
-        let c: Arc<_> = Monomial { i }.into();
+        let c = Monomial { i };
         fs.push(c);
     }
 
-    let lm = LinearModel::new(fs.features);
+    let lm = LinearModel::from(fs);
 
     let q: SVector<usize, 1> = Vector1::new(101);
     let lower = Vector1::new(-1.);
@@ -213,11 +213,11 @@ fn test_optimal_design_acrit_poly_1() -> Result<()> {
 fn test_optimal_design_dcrit_poly_1_custom_bound() -> Result<()> {
     let mut fs = FeatureSet::new();
     for i in 0..2 {
-        let c: Arc<_> = Monomial { i }.into();
+        let c = Monomial { i };
         fs.push(c);
     }
 
-    let lm = LinearModel::new(fs.features);
+    let lm = LinearModel::from(fs);
 
     let q: SVector<usize, 1> = Vector1::new(101);
     let lower = Vector1::new(-0.9);
@@ -249,11 +249,11 @@ fn test_optimal_design_dcrit_costscrit_poly_3() -> Result<()> {
     let mut fs = FeatureSet::new();
 
     for i in 0..2 {
-        let c: Arc<_> = Monomial { i }.into();
+        let c = Monomial { i };
         fs.push(c);
     }
 
-    let lm = LinearModel::new(fs.features);
+    let lm = LinearModel::from(fs);
 
     let q: SVector<usize, 1> = Vector1::new(101);
     let lower = Vector1::new(-1.);

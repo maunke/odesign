@@ -41,7 +41,7 @@ impl<const D: usize> Optimality<D> for AOptimality<D> {
     fn measure(&self, weights: &Mat<f64>, supp: Arc<MatrixDRows<D>>) -> f64 {
         let m_mean = self.matrix_mean(supp);
         let val = m_mean.val(weights);
-        (self.linear_model.features.len() as f64) / val.exp()
+        (self.linear_model.n_features() as f64) / val.exp()
     }
 }
 
@@ -205,10 +205,10 @@ mod tests {
     fn get_linear_model() -> LinearModel<1> {
         let mut fs = FeatureSet::new();
         for i in 0..3 {
-            let c: Arc<_> = Monomial { i }.into();
+            let c = Monomial { i };
             fs.push(c);
         }
-        LinearModel::new(fs.features)
+        LinearModel::from(fs)
     }
 
     #[test]

@@ -21,15 +21,15 @@ impl FeatureFunction<1> for Monomial {
 fn main() -> Result<()> {
     // define set of features
     let mut fs = FeatureSet::new();
-    let c: Arc<_> = Monomial { i: 0 }.into();
+    let c = Monomial { i: 0 };
     fs.push(c);
-    let c: Arc<_> = Monomial { i: 1 }.into();
+    let c = Monomial { i: 1 };
     fs.push(c);
-    let c: Arc<_> = Monomial { i: 2 }.into();
+    let c = Monomial { i: 2 };
     fs.push(c);
 
     // define linear model with features
-    let lm = LinearModel::new(fs.features);
+    let lm = LinearModel::from(fs);
 
     // define optimality, bound and init design args
     let optimality = Arc::new(DOptimality::new(lm.into()));

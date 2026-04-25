@@ -1,5 +1,7 @@
+use crate::{Error, Result};
 use nalgebra::{SMatrix, SVector};
 use num_dual::DualNum;
+use std::collections::HashSet;
 use std::sync::Arc;
 
 /// Required value function for [Feature] derive.
@@ -19,10 +21,10 @@ pub trait Feature<const D: usize> {
 }
 
 /// Set of features.
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub struct FeatureSet<const D: usize> {
-    /// Vectoring storing features.
-    pub features: Vec<Arc<dyn Feature<D> + Send + Sync>>,
+    // Vectoring storing features.
+    features: Vec<Arc<dyn Feature<D> + Send + Sync>>,
 }
 
 impl<const D: usize> FeatureSet<D> {
@@ -32,8 +34,74 @@ impl<const D: usize> FeatureSet<D> {
     }
 
     /// Add feature to feature set.
-    pub fn push(&mut self, feature: Arc<dyn Feature<D> + Send + Sync>) {
-        self.features.push(feature)
+    pub fn push<F: Feature<D> + Send + Sync + 'static>(&mut self, feature: F) {
+        self.features.push(Arc::new(feature))
+    }
+
+    /// Returns an iterator over the features.
+    pub fn iter(&self) -> std::slice::Iter<'_, Arc<dyn Feature<D> + Send + Sync>> {
+        self.features.iter()
+    }
+
+    /// Returns the number of features.
+    pub fn len(&self) -> usize {
+        self.features.len()
+    }
+
+    /// Returns a subset of the features selected by the given indices.
+    ///
+    /// Each index must be unique and in range; otherwise returns
+    /// [`Error::DuplicateIndex`] or [`Error::IndexOutOfBounds`]. These checks also
+    /// guarantee termination on unbounded iterators (e.g. `1..`), since after at
+    /// most `len + 1` items the iterator must yield either a duplicate or an
+    /// out-of-bounds index.
+    pub fn subset<I: IntoIterator<Item = usize>>(&self, indices: I) -> Result<FeatureSet<D>> {
+        let len = self.features.len();
+        let mut dedup_book = HashSet::with_capacity(len);
+        let features = indices
+            .into_iter()
+            .map(|index| {
+                if !dedup_book.insert(index) {
+                    return Err(Error::DuplicateIndex { index });
+                }
+                self.features
+                    .get(index)
+                    .cloned()
+                    .ok_or(Error::IndexOutOfBounds { index, len })
+            })
+            .collect::<Result<Vec<_>>>()?;
+        Ok(FeatureSet { features })
+    }
+}
+
+impl<const D: usize, F> From<Vec<F>> for FeatureSet<D>
+where
+    F: Feature<D> + Send + Sync + 'static,
+{
+    fn from(features: Vec<F>) -> Self {
+        Self {
+            features: features
+                .into_iter()
+                .map(|f| Arc::new(f) as Arc<dyn Feature<D> + Send + Sync>)
+                .collect(),
+        }
+    }
+}
+
+impl<const D: usize> IntoIterator for FeatureSet<D> {
+    type Item = Arc<dyn Feature<D> + Send + Sync>;
+    type IntoIter = std::vec::IntoIter<Self::Item>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.features.into_iter()
+    }
+}
+
+impl<const D: usize> FromIterator<Arc<dyn Feature<D> + Send + Sync>> for FeatureSet<D> {
+    fn from_iter<I: IntoIterator<Item = Arc<dyn Feature<D> + Send + Sync>>>(iter: I) -> Self {
+        Self {
+            features: iter.into_iter().collect(),
+        }
     }
 }
 
@@ -91,9 +159,35 @@ mod tests {
     #[test]
     fn feature_set() -> Result<()> {
         let mut fs = FeatureSet::new();
-        let feature: Arc<_> = Monomial { i: 1, j: 2 }.into();
+        let feature = Monomial { i: 1, j: 2 };
         fs.push(feature);
         assert_eq!(fs.features.len(), 1);
+        Ok(())
+    }
+
+    #[test]
+    fn subset_rejects_duplicates_and_oob() -> Result<()> {
+        let fs: FeatureSet<2> = vec![
+            Monomial { i: 0, j: 0 },
+            Monomial { i: 1, j: 0 },
+            Monomial { i: 0, j: 1 },
+        ]
+        .into();
+
+        assert!(matches!(
+            fs.subset([0, 0]),
+            Err(crate::Error::DuplicateIndex { index: 0 })
+        ));
+        assert!(matches!(
+            fs.subset([3]),
+            Err(crate::Error::IndexOutOfBounds { index: 3, len: 3 })
+        ));
+        // Unbounded range terminates: yields 1, 2, 3 -> 3 is OOB.
+        assert!(matches!(
+            fs.subset(1..),
+            Err(crate::Error::IndexOutOfBounds { index: 3, len: 3 })
+        ));
+        assert_eq!(fs.subset(0..3)?.len(), 3);
         Ok(())
     }
 }

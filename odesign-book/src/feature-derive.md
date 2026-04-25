@@ -27,11 +27,10 @@ impl FeatureFunction<1> for Monomial {
 fn main() -> Result<()> {
     let mut fs = FeatureSet::new();
     for i in -1..2 {
-        let c: Arc<_> = Monomial { i }.into();
-        fs.push(c);
+        fs.push(Monomial { i });
     }
 
-    let _lm = LinearModel::new(fs.features);
+    let _lm = LinearModel::from(fs);
 
     Ok(())
 }

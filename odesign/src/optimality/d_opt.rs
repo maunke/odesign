@@ -44,7 +44,7 @@ impl<const D: usize> Optimality<D> for DOptimality<D> {
         let val = m_mean.val(weights);
         (-val)
             .exp()
-            .powf(1. / (self.linear_model.features.len() as f64))
+            .powf(1. / (self.linear_model.n_features() as f64))
     }
 }
 
@@ -151,7 +151,7 @@ impl<const D: usize> NLPFunctionTarget for DDispersionFunction<D> {
         let (feature_vec, inv_fim_design) = self.pre_calculations(&x_svector);
 
         -feature_vec.col(0).transpose() * inv_fim_design.col(0)
-            + self.linear_model.features.len() as f64
+            + self.linear_model.n_features() as f64
     }
 
     fn val_grad(&self, x: &Mat<f64>) -> (f64, Mat<f64>) {
@@ -159,7 +159,7 @@ impl<const D: usize> NLPFunctionTarget for DDispersionFunction<D> {
         let (feature_vec, inv_fim_design) = self.pre_calculations(&x_svector);
         let jac_t = self.linear_model.jac_t(&x_svector);
         let val = -feature_vec.col(0).transpose() * inv_fim_design.col(0)
-            + self.linear_model.features.len() as f64;
+            + self.linear_model.n_features() as f64;
         let grad = -&jac_t * inv_fim_design;
         (val, grad)
     }
@@ -169,7 +169,7 @@ impl<const D: usize> NLPFunctionTarget for DDispersionFunction<D> {
         let (feature_vec, inv_fim_design) = self.pre_calculations(&x_svector);
         let jac_t = self.linear_model.jac_t(&x_svector);
         let val = -feature_vec.col(0).transpose() * inv_fim_design.col(0)
-            + self.linear_model.features.len() as f64;
+            + self.linear_model.n_features() as f64;
         let grad = -&jac_t * &inv_fim_design;
         let mut hes = -&jac_t * self.fim_lu.solve(jac_t.transpose());
         self.linear_model
@@ -186,7 +186,7 @@ impl<const D: usize> NLPFunctionTarget for DDispersionFunction<D> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{Feature, FeatureFunction, Result, assert_nlp_target_consistency};
+    use crate::{Feature, FeatureFunction, FeatureSet, Result, assert_nlp_target_consistency};
     use num_dual::DualNum;
 
     #[derive(Feature)]
@@ -204,7 +204,7 @@ mod tests {
 
     fn get_linear_model() -> LinearModel<2> {
         let monom = Monomial { i: 1, j: 1 };
-        LinearModel::new(vec![Arc::new(monom)])
+        FeatureSet::from(vec![monom]).into()
     }
 
     #[test]

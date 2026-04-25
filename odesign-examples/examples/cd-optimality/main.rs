@@ -23,12 +23,12 @@ fn main() -> Result<()> {
     // define set of features
     let mut fs = FeatureSet::new();
     for i in 0..3 {
-        let c: Arc<_> = Monomial { i }.into();
+        let c = Monomial { i };
         fs.push(c);
     }
 
     // define linear model with features
-    let lm: Arc<_> = LinearModel::new(fs.features).into();
+    let lm: Arc<_> = LinearModel::from(fs).into();
     // define optimality, bound and init design args
     let d_optimality: Arc<_> = DOptimality::new(lm.clone()).into();
     let c = DVector::from_vec(vec![0., 0., 1.]);

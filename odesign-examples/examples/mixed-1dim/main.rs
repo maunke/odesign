@@ -34,19 +34,18 @@ fn main() -> Result<()> {
     // define set of features
     let mut fs = FeatureSet::new();
     for i in -1..2 {
-        let c: Arc<_> = Monomial { i }.into();
+        let c = Monomial { i };
         fs.push(c);
     }
     for period in 1..5 {
-        let c: Arc<_> = Sin {
+        let c = Sin {
             period: period as f64,
-        }
-        .into();
+        };
         fs.push(c);
     }
 
     // define linear model with features
-    let lm = LinearModel::new(fs.features);
+    let lm = LinearModel::from(fs);
 
     // define optimality, bound and init design args
     let optimality = Arc::new(DOptimality::new(lm.into()));

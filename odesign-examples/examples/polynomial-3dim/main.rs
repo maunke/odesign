@@ -28,14 +28,14 @@ fn main() -> Result<()> {
         for j in 0..3 {
             for k in 0..3 {
                 if i + j + k < 3 {
-                    let c: Arc<_> = Monomial { i, j, k }.into();
+                    let c = Monomial { i, j, k };
                     fs.push(c);
                 }
             }
         }
     }
 
-    let lm = LinearModel::new(fs.features);
+    let lm = LinearModel::from(fs);
 
     let q = Vector3::new(11, 11, 11);
     let lower = Vector3::new(-1., -1., -1.);

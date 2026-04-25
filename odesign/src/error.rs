@@ -49,6 +49,20 @@ pub enum Error {
         /// Shape of matrix 2.
         shape2: (usize, usize),
     },
+    /// An index appears more than once in a subset selection.
+    #[error("duplicate index {index} in feature subset")]
+    DuplicateIndex {
+        /// The repeated index.
+        index: usize,
+    },
+    /// An index is greater than or equal to the length of the source.
+    #[error("index {index} out of bounds for feature set of len {len}")]
+    IndexOutOfBounds {
+        /// The offending index.
+        index: usize,
+        /// The length of the feature set.
+        len: usize,
+    },
 }
 
 /// Main result type

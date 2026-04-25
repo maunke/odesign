@@ -59,12 +59,10 @@ impl FeatureFunction<1> for Monomial {
 // f(x): 1 + x
 fn main() -> Result<()> {
     let mut fs = FeatureSet::new();
-    let c: Arc<_> = Monomial { i: 0 }.into();
-    fs.push(c);
-    let c: Arc<_> = Monomial { i: 1 }.into();
-    fs.push(c);
+    fs.push(Monomial { i: 0 });
+    fs.push(Monomial { i: 1 });
 
-    let lm = LinearModel::new(fs.features);
+    let lm = LinearModel::from(fs);
 
     let optimality: Arc<_> = DOptimality::new(lm.into()).into();
     let lower = Vector1::new(-1.0);

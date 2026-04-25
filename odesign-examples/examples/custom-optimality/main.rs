@@ -129,12 +129,12 @@ fn main() -> Result<()> {
     // define set of features
     let mut fs = FeatureSet::new();
     for i in 0..4 {
-        let c: Arc<_> = Monomial { i }.into();
+        let c = Monomial { i };
         fs.push(c);
     }
 
     // define linear model with features
-    let lm = LinearModel::new(fs.features);
+    let lm = LinearModel::from(fs);
 
     // define optimality, bound and init design args
     let d_optimality: Arc<_> = DOptimality::new(lm.into()).into();

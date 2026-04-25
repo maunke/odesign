@@ -27,13 +27,13 @@ pub struct COptimality<const D: usize> {
 impl<const D: usize> COptimality<D> {
     /// Instantizes [COptimality]
     pub fn new(linear_model: Arc<LinearModel<D>>, c: Arc<DVector<f64>>) -> Result<Self> {
-        if linear_model.features.len() != c.nrows() {
+        if linear_model.n_features() != c.nrows() {
             return Err(Error::ShapeMismatch {
                 mat1: "features",
                 mat2: "c",
                 dim1: 0,
                 dim2: 0,
-                shape1: (linear_model.features.len(), 1),
+                shape1: (linear_model.n_features(), 1),
                 shape2: c.shape(),
             });
         }
@@ -224,7 +224,7 @@ impl<const D: usize> NLPFunctionTarget for CDispersionFunction<D> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{Feature, FeatureFunction, Result, assert_nlp_target_consistency};
+    use crate::{Feature, FeatureFunction, FeatureSet, Result, assert_nlp_target_consistency};
     use nalgebra::SVector;
     use num_dual::DualNum;
 
@@ -244,7 +244,7 @@ mod tests {
     fn get_linear_model() -> LinearModel<2> {
         let monom_a = Monomial { i: 1, j: 1 };
         let monom_b = Monomial { i: 1, j: 2 };
-        LinearModel::new(vec![Arc::new(monom_a), Arc::new(monom_b)])
+        FeatureSet::from(vec![monom_a, monom_b]).into()
     }
 
     #[test]

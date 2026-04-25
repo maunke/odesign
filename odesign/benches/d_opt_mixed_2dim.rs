@@ -53,20 +53,20 @@ impl FeatureFunction<2> for ExpXY {
 // f(x, y): 1 + x + y + exp(-x) + exp(-y) + exp[-x*y]
 fn mixed_2dim(size: usize) -> Result<()> {
     let mut fs = FeatureSet::new();
-    let c: Arc<_> = Monomial { i: 0, j: 0 }.into();
+    let c = Monomial { i: 0, j: 0 };
     fs.push(c);
-    let c: Arc<_> = Monomial { i: 1, j: 0 }.into();
+    let c = Monomial { i: 1, j: 0 };
     fs.push(c);
-    let c: Arc<_> = Monomial { i: 0, j: 1 }.into();
+    let c = Monomial { i: 0, j: 1 };
     fs.push(c);
-    let c: Arc<_> = ExpX {}.into();
+    let c = ExpX {};
     fs.push(c);
-    let c: Arc<_> = ExpY {}.into();
+    let c = ExpY {};
     fs.push(c);
-    let c: Arc<_> = ExpXY {}.into();
+    let c = ExpXY {};
     fs.push(c);
 
-    let lm = LinearModel::new(fs.features);
+    let lm = LinearModel::from(fs);
 
     let q = Vector2::new(size, size);
     let lower = Vector2::new(-1., -1.);

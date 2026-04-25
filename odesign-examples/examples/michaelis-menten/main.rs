@@ -60,10 +60,10 @@ fn main() -> Result<()> {
 
     // Linearized model uses sensitivities as regressors
     let mut fs = FeatureSet::new();
-    fs.push(Arc::new(SensitivityVmax));
-    fs.push(Arc::new(SensitivityKm));
+    fs.push(SensitivityVmax);
+    fs.push(SensitivityKm);
 
-    let lm: Arc<_> = LinearModel::new(fs.features).into();
+    let lm: Arc<_> = LinearModel::from(fs).into();
     let opt: Arc<_> = DOptimality::new(lm).into();
 
     let lower = Vector1::new(0.01);
