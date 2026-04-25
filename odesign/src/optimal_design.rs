@@ -1,4 +1,5 @@
 use crate::interior_point_method::{InequalityConstraint, NLPBound, VoronoiConstraint};
+use crate::optimality::WeightedOptimality;
 use crate::{
     Error, Feature, Grid, IntoSVector, LinearEqualityConstraint, MatrixDRows, NLPFunctionTarget,
     NLPSolver, NLPSolverConstraints, NLPSolverOptions, Optimalities, Optimality,
@@ -357,7 +358,6 @@ impl Default for OptimalDesignCriteria {
 /// designs" method. [Read more](https://doi.org/10.1007/s11222-017-9741-y)
 pub struct OptimalDesign<const D: usize> {
     optimalities: Optimalities<D>,
-    weights: Vec<f64>,
     design: Design<D>,
     constraint: DesignConstraint<D>,
     criteria: OptimalDesignCriteria,
@@ -391,7 +391,6 @@ impl<const D: usize> Display for OptimalDesign<D> {
 impl<const D: usize> Default for OptimalDesign<D> {
     fn default() -> Self {
         let optimalities = vec![];
-        let weights = vec![1.];
         let lower = SVector::<f64, D>::zeros();
         let mut upper = SVector::<f64, D>::zeros();
         upper.fill(1.);
@@ -405,7 +404,6 @@ impl<const D: usize> Default for OptimalDesign<D> {
         let iterations = 0;
         Self {
             optimalities,
-            weights,
             design,
             constraint,
             criteria,
@@ -421,17 +419,14 @@ impl<const D: usize> OptimalDesign<D> {
     }
 
     /// Returns the initialized solver with given optimalities
-    pub fn with_optimalities(mut self, optimalities: Optimalities<D>, weights: Vec<f64>) -> Self {
+    pub fn with_optimalities(mut self, optimalities: Optimalities<D>) -> Self {
         self.optimalities = optimalities;
-        self.weights = weights;
         self
     }
 
     /// Returns the initialized solver with given optimality
     pub fn with_optimality(mut self, optimality: Arc<dyn Optimality<D> + Send + Sync>) -> Self {
-        let optimalities = vec![optimality];
-        self.optimalities = optimalities;
-        self.weights = vec![1.];
+        self.optimalities = vec![WeightedOptimality::new(optimality, 1.)];
         self
     }
 
@@ -586,10 +581,11 @@ impl<const D: usize> OptimalDesign<D> {
             .view_range(.., ..)
             .into_faer()
             .to_owned();
-        zip(&self.optimalities, &self.weights)
-            .map(|(opt, &weight)| {
-                let m = opt.measure(&weights, supp.clone());
-                m * weight
+        self.optimalities
+            .iter()
+            .map(|w_opt| {
+                let m = w_opt.optimality.measure(&weights, supp.clone());
+                m * w_opt.weight
             })
             .sum()
     }
@@ -613,9 +609,9 @@ impl<const D: usize> OptimalDesign<D> {
         let supp = Arc::new(self.design.supp.clone());
 
         let mut design_measures = OptimalityMeasures::new();
-        zip(&self.optimalities, &self.weights).for_each(|(opt, &w)| {
-            let m = opt.matrix_mean(supp.clone());
-            design_measures.push(m, w);
+        self.optimalities.iter().for_each(|w_opt| {
+            let m = w_opt.optimality.matrix_mean(supp.clone());
+            design_measures.push(m, w_opt.weight);
         });
 
         let solver = NLPSolver::new(options, constraints, Arc::new(design_measures));
@@ -674,9 +670,11 @@ impl<const D: usize> OptimalDesign<D> {
             .to_owned();
 
         let mut design_measures = OptimalityMeasures::new();
-        zip(&self.optimalities, &self.weights).for_each(|(opt, &w)| {
-            let m = opt.dispersion_function(supp.clone(), weights.clone(), x_id);
-            design_measures.push(m, w);
+        self.optimalities.iter().for_each(|w_opt| {
+            let m = w_opt
+                .optimality
+                .dispersion_function(supp.clone(), weights.clone(), x_id);
+            design_measures.push(m, w_opt.weight);
         });
 
         let solver = NLPSolver::new(options, constraints, Arc::new(design_measures));

@@ -11,8 +11,24 @@ use faer::Mat;
 use rayon::prelude::*;
 use std::sync::Arc;
 
-/// Vector of optimalities
-pub type Optimalities<const D: usize> = Vec<Arc<dyn Optimality<D> + Send + Sync>>;
+/// An [Optimality] paired with its weight in a weighted sum of optimality measures.
+#[derive(Clone)]
+pub struct WeightedOptimality<const D: usize> {
+    /// The optimality criterion.
+    pub optimality: Arc<dyn Optimality<D> + Send + Sync>,
+    /// The weight applied to the optimality's measure.
+    pub weight: f64,
+}
+
+impl<const D: usize> WeightedOptimality<D> {
+    /// Creates a new [WeightedOptimality] from an optimality and its weight.
+    pub fn new(optimality: Arc<dyn Optimality<D> + Send + Sync>, weight: f64) -> Self {
+        Self { optimality, weight }
+    }
+}
+
+/// Vector of weighted optimalities
+pub type Optimalities<const D: usize> = Vec<WeightedOptimality<D>>;
 
 /// Defines a list of optimality measures and their weights.
 #[derive(Default)]

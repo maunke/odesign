@@ -3,7 +3,7 @@ use num_dual::*;
 use odesign::{
     AOptimality, COptimality, CostsOptimality, CustomDesignBound, DOptimality, Design, DesignBound,
     Feature, FeatureFunction, FeatureSet, Grid, LinearModel, MatrixDRows, MatrixUnion,
-    OptimalDesign, OptimalDesignCriteria, Optimalities, Optimality, Result,
+    OptimalDesign, OptimalDesignCriteria, Optimalities, Optimality, Result, WeightedOptimality,
 };
 use std::sync::Arc;
 
@@ -49,13 +49,15 @@ fn test_optimal_design_cdcrit_poly_2() -> Result<()> {
     let c = DVector::from_vec(vec![0., 0., 1.]);
     let c_opt = COptimality::new(lm.clone(), c.into())?;
     let c_opt = Arc::new(c_opt);
-    let optimalities: Vec<Arc<dyn Optimality<1> + Send + Sync>> = vec![d_opt, c_opt];
-    let weights = vec![1., 1.];
+    let optimalities = vec![
+        WeightedOptimality::new(d_opt, 1.),
+        WeightedOptimality::new(c_opt, 1.),
+    ];
     let init_grid = Grid::new(lower, upper, q)?;
     let init_design = Design::new_from_supp(init_grid.points);
     let criteria = OptimalDesignCriteria::default();
     let mut od = OptimalDesign::new()
-        .with_optimalities(optimalities, weights)
+        .with_optimalities(optimalities)
         .with_bound_args(lower, upper)?
         .with_init_design(init_design)
         .with_criteria(criteria);
@@ -264,10 +266,13 @@ fn test_optimal_design_dcrit_costscrit_poly_3() -> Result<()> {
     let d_opt = Arc::new(DOptimality::new(lm.into()));
     let alpha = 1.0;
     let costs_opt: Arc<_> = CostsOptimality::new(measurements, alpha).into();
-    let optimalities: Optimalities<1> = vec![d_opt, costs_opt];
+    let optimalities: Optimalities<1> = vec![
+        WeightedOptimality::new(d_opt, 1.),
+        WeightedOptimality::new(costs_opt, 1.),
+    ];
     let bound = DesignBound::new(lower, upper)?;
     let mut od = OptimalDesign::new()
-        .with_optimalities(optimalities, vec![0.5, 0.5])
+        .with_optimalities(optimalities)
         .with_bound(bound)
         .with_init_design(init_design);
     let design = od.solve();

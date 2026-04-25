@@ -2,7 +2,7 @@ use nalgebra::{DVector, SVector, Vector1};
 use num_dual::DualNum;
 use odesign::{
     COptimality, DOptimality, Feature, FeatureFunction, FeatureSet, LinearModel, OptimalDesign,
-    Optimalities, Result,
+    Optimalities, Result, WeightedOptimality,
 };
 use std::sync::Arc;
 
@@ -33,15 +33,17 @@ fn main() -> Result<()> {
     let d_optimality: Arc<_> = DOptimality::new(lm.clone()).into();
     let c = DVector::from_vec(vec![0., 0., 1.]);
     let c_optimality: Arc<_> = COptimality::new(lm, c.into())?.into();
-    let optimalities: Optimalities<1> = vec![d_optimality, c_optimality];
-    let optimalities_weights = vec![1., 1.];
+    let optimalities: Optimalities<1> = vec![
+        WeightedOptimality::new(d_optimality, 1.),
+        WeightedOptimality::new(c_optimality, 1.),
+    ];
     let lower = Vector1::new(-1.0);
     let upper = Vector1::new(1.0);
     let q = Vector1::new(101);
 
     // define Optimal Design resolver
     let mut od = OptimalDesign::new()
-        .with_optimalities(optimalities, optimalities_weights)
+        .with_optimalities(optimalities)
         .with_bound_args(lower, upper)?
         .with_init_design_grid_args(lower, upper, q)?;
 

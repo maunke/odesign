@@ -23,6 +23,6 @@ pub use optimal_design::{
 };
 pub use optimality::{
     AOptimality, COptimality, CostsOptimality, DOptimality, Optimalities, Optimality,
-    OptimalityMeasures,
+    OptimalityMeasures, WeightedOptimality,
 };
 pub use utils::{IntoSVector, MatrixDRows, MatrixUnion};
