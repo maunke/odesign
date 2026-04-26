@@ -51,7 +51,7 @@ fn main() -> Result<()> {
     let q = Vector1::new(101);
     let grid = Grid::new(lower, upper, q)?;
 
-    let design_bound_const: Arc<_> = CustomDesignBoundConstraint {}.into();
+    let design_bound_const = CustomDesignBoundConstraint {};
     let custom_bound = CustomDesignBound::new(design_bound_const);
 
     // define Optimal Design resolver

@@ -275,7 +275,8 @@ pub struct CustomDesignBound<const D: usize> {
 impl<const D: usize> CustomDesignBound<D> {
     /// Creates the custom design bound by providing a feature f(x)
     /// such that the design bound fullfills f(x) <= 0
-    pub fn new(f: Arc<dyn Feature<D> + Send + Sync>) -> Self {
+    pub fn new<F: Feature<D> + Send + Sync + 'static>(f: F) -> Self {
+        let f = Arc::new(f);
         let inequal: Arc<_> = CustomDesignBoundInequalConstr::new(f).into();
         Self { inequal }
     }

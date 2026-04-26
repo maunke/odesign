@@ -222,7 +222,7 @@ fn test_optimal_design_dcrit_poly_1_custom_bound() -> Result<()> {
     let upper = Vector1::new(0.9);
     let optimality = DOptimality::new(lm);
     let grid = Grid::new(lower, upper, q)?;
-    let design_bound_const: Arc<_> = CustomBoundConstraint {}.into();
+    let design_bound_const = CustomBoundConstraint {};
     let custom_bound = CustomDesignBound::new(design_bound_const);
     let mut od = OptimalDesign::new()
         .with_optimality(optimality)
