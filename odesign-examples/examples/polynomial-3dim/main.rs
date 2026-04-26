@@ -39,7 +39,7 @@ fn main() -> Result<()> {
     let q = Vector3::new(11, 11, 11);
     let lower = Vector3::new(-1., -1., -1.);
     let upper = Vector3::new(1., 1., 1.);
-    let optimality = DOptimality::new(lm.into());
+    let optimality = DOptimality::new(lm);
     let mut od = OptimalDesign::new()
         .with_optimality(optimality)
         .with_bound_args(lower, upper)?

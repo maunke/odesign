@@ -23,7 +23,8 @@ pub struct CostsOptimality<const D: usize> {
 
 impl<const D: usize> CostsOptimality<D> {
     /// Instantizes [CostsOptimality]
-    pub fn new(measurements: Arc<MatrixDRows<D>>, alpha: f64) -> Self {
+    pub fn new(measurements: impl Into<Arc<MatrixDRows<D>>>, alpha: f64) -> Self {
+        let measurements = measurements.into();
         Self {
             measurements,
             alpha,

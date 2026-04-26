@@ -4,7 +4,6 @@ use odesign::{
     COptimality, DOptimality, Feature, FeatureFunction, FeatureSet, LinearModel, OptimalDesign,
     Optimalities, Result, WeightedOptimality,
 };
-use std::sync::Arc;
 
 #[derive(Feature)]
 #[dimension = 1]
@@ -28,11 +27,11 @@ fn main() -> Result<()> {
     }
 
     // define linear model with features
-    let lm: Arc<_> = LinearModel::from(fs).into();
+    let lm = LinearModel::from(fs);
     // define optimality, bound and init design args
     let d_optimality = DOptimality::new(lm.clone());
     let c = DVector::from_vec(vec![0., 0., 1.]);
-    let c_optimality = COptimality::new(lm, c.into())?;
+    let c_optimality = COptimality::new(lm, c)?;
     let optimalities: Optimalities<1> = vec![
         WeightedOptimality::new(d_optimality, 1.),
         WeightedOptimality::new(c_optimality, 1.),

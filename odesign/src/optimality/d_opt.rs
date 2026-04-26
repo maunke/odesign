@@ -18,7 +18,8 @@ pub struct DOptimality<const D: usize> {
 
 impl<const D: usize> DOptimality<D> {
     /// Instantizes [DOptimality]
-    pub fn new(linear_model: Arc<LinearModel<D>>) -> Self {
+    pub fn new(linear_model: impl Into<Arc<LinearModel<D>>>) -> Self {
+        let linear_model = linear_model.into();
         Self { linear_model }
     }
 }

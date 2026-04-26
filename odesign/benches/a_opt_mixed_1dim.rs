@@ -43,7 +43,7 @@ fn mixed_1dim(size: usize) -> Result<()> {
     let lm = LinearModel::from(fs);
 
     // define optimality, bound and init design args
-    let optimality = AOptimality::new(lm.into());
+    let optimality = AOptimality::new(lm);
     let lower = Vector1::new(0.5);
     let upper = Vector1::new(2.5);
     let q = Vector1::new(size);

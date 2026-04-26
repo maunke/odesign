@@ -26,7 +26,12 @@ pub struct COptimality<const D: usize> {
 
 impl<const D: usize> COptimality<D> {
     /// Instantizes [COptimality]
-    pub fn new(linear_model: Arc<LinearModel<D>>, c: Arc<DVector<f64>>) -> Result<Self> {
+    pub fn new(
+        linear_model: impl Into<Arc<LinearModel<D>>>,
+        c: impl Into<Arc<DVector<f64>>>,
+    ) -> Result<Self> {
+        let linear_model = linear_model.into();
+        let c = c.into();
         if linear_model.n_features() != c.nrows() {
             return Err(Error::ShapeMismatch {
                 mat1: "features",
@@ -275,7 +280,7 @@ mod tests {
     fn test_c_design_error() -> Result<()> {
         let linear_model: Arc<_> = get_linear_model().into();
         let c = DVector::from_vec(vec![0.]);
-        let c_opt = COptimality::new(linear_model, c.into());
+        let c_opt = COptimality::new(linear_model, c);
         let c_opt_err = Error::ShapeMismatch {
             mat1: "features",
             mat2: "c",

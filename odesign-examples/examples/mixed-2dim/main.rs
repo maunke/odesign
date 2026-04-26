@@ -68,7 +68,7 @@ fn main() -> Result<()> {
     let q = Vector2::new(21, 21);
     let lower = Vector2::new(-1., -1.);
     let upper = Vector2::new(1., 1.);
-    let optimality = DOptimality::new(lm.into());
+    let optimality = DOptimality::new(lm);
     let mut od = OptimalDesign::new()
         .with_optimality(optimality)
         .with_bound_args(lower, upper)?

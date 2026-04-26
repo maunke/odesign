@@ -18,7 +18,6 @@ use num_dual::DualNum;
 use odesign::{
     DOptimality, Feature, FeatureFunction, FeatureSet, LinearModel, OptimalDesign, Result,
 };
-use std::sync::Arc;
 
 const V_MAX: f64 = 1.0;
 const K_M: f64 = 10.0;
@@ -63,7 +62,7 @@ fn main() -> Result<()> {
     fs.push(SensitivityVmax);
     fs.push(SensitivityKm);
 
-    let lm: Arc<_> = LinearModel::from(fs).into();
+    let lm = LinearModel::from(fs);
     let opt = DOptimality::new(lm);
 
     let lower = Vector1::new(0.01);

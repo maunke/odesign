@@ -47,7 +47,7 @@ fn main() -> Result<()> {
     let lm = LinearModel::from(fs);
 
     // define optimality, bound and init design args
-    let optimality = DOptimality::new(lm.into());
+    let optimality = DOptimality::new(lm);
     let lower = Vector1::new(0.5);
     let upper = Vector1::new(2.5);
     let q = Vector1::new(101);
