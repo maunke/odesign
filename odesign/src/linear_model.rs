@@ -40,6 +40,7 @@ use std::sync::Arc;
 ///
 /// let lm = LinearModel::from(feature_set);
 /// ```
+#[derive(Clone)]
 pub struct LinearModel<const D: usize> {
     // Ordered list of features, building the feature map $\phi:\mathbb R^m \to\mathbb R^n$, where
     // n is the number of features.
