@@ -50,7 +50,7 @@ fn main() -> Result<()> {
 
     let lm = LinearModel::from(fs);
 
-    let optimality = DOptimality::new(lm.into());
+    let optimality = DOptimality::new(lm);
     let lower = Vector1::new(-1.0);
     let upper = Vector1::new(1.0);
     let q = Vector1::new(101);

@@ -4,7 +4,6 @@ use odesign::{
     CustomDesignBound, DOptimality, Feature, FeatureFunction, FeatureSet, Grid, LinearModel,
     OptimalDesign, Result,
 };
-use std::sync::Arc;
 
 #[derive(Feature)]
 #[dimension = 1]
