@@ -12,11 +12,15 @@ format-check:
 format:
     cargo +nightly fmt
 
+test-doc:
+    echo "Run doc tests.."
+    cargo test --release --doc
+
 lint:
     echo "Run clippy.."
     cargo clippy
 
-test-all: format-check lint test
+test-all: format-check lint test test-doc
 
 book-build:
     mdbook build odesign-book
