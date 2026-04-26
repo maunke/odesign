@@ -13,10 +13,9 @@
 //! - Duggleby (1979), J. Theoretical Biology 81:671-684
 //! - Atkinson & Donev (1992), Optimum Experimental Designs, Oxford
 
-use nalgebra::{SVector, Vector1};
-use num_dual::DualNum;
 use odesign::{
-    DOptimality, Feature, FeatureFunction, FeatureSet, LinearModel, OptimalDesign, Result,
+    DOptimality, DualNum, Feature, FeatureFunction, FeatureSet, LinearModel, OptimalDesign, Result,
+    SVector, Vector1,
 };
 
 const V_MAX: f64 = 1.0;

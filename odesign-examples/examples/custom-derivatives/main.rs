@@ -1,5 +1,7 @@
-use nalgebra::{Matrix1, SVector, Vector1};
-use odesign::{DOptimality, Feature, FeatureSet, LinearModel, OptimalDesign, Result};
+use odesign::{
+    DOptimality, Feature, FeatureSet, LinearModel, Matrix1, OptimalDesign, Result, SMatrix,
+    SVector, Vector1,
+};
 
 struct Monomial {
     i: i32,
@@ -17,10 +19,7 @@ impl Feature<1> for Monomial {
         (val, grad)
     }
 
-    fn val_grad_hes(
-        &self,
-        x: &SVector<f64, 1>,
-    ) -> (f64, SVector<f64, 1>, nalgebra::SMatrix<f64, 1, 1>) {
+    fn val_grad_hes(&self, x: &SVector<f64, 1>) -> (f64, SVector<f64, 1>, SMatrix<f64, 1, 1>) {
         let (val, grad) = self.val_grad(x);
         (
             val,

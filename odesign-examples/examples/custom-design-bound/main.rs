@@ -1,8 +1,6 @@
-use nalgebra::{SVector, Vector1};
-use num_dual::DualNum;
 use odesign::{
-    CustomDesignBound, DOptimality, Feature, FeatureFunction, FeatureSet, Grid, LinearModel,
-    OptimalDesign, Result,
+    CustomDesignBound, DOptimality, DualNum, Feature, FeatureFunction, FeatureSet, Grid,
+    LinearModel, OptimalDesign, Result, SVector, Vector1,
 };
 
 #[derive(Feature)]

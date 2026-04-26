@@ -51,10 +51,9 @@ of an optimal design of the simple polynomial 1 + x within design bounds [-1,
 
 
 ```rust
-use nalgebra::{SVector, Vector1};
-use num_dual::DualNum;
 use odesign::{
-    DOptimality, Feature, FeatureFunction, FeatureSet, LinearModel, OptimalDesign, Result,
+    DOptimality, DualNum, Feature, FeatureFunction, FeatureSet, LinearModel, OptimalDesign, Result,
+    SVector, Vector1,
 };
 
 #[derive(Feature)]
@@ -116,10 +115,9 @@ As a more complex example please take a look at this [3 dimensional polynomial e
 design space of [-1, -1, -1] x [+1, +1, +1] and an initial design grid of 11 x 11 x 11 points.
 
 ```rust
-use nalgebra::{SVector, Vector3};
-use num_dual::DualNum;
 use odesign::{
-    DOptimality, Feature, FeatureFunction, FeatureSet, LinearModel, OptimalDesign, Result,
+    DOptimality, DualNum, Feature, FeatureFunction, FeatureSet, LinearModel, OptimalDesign, Result,
+    SVector, Vector3,
 };
 
 #[derive(Feature)]

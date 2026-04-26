@@ -24,10 +24,9 @@ of an optimal design of the simple polynomial 1 + x within design bounds [-1,
 +1] and 101 equally distributed grid points as an init design.
 
 ```rust
-use nalgebra::{SVector, Vector1};
-use num_dual::DualNum;
 use odesign::{
-    DOptimality, Feature, FeatureFunction, FeatureSet, LinearModel, OptimalDesign, Result,
+    DOptimality, DualNum, Feature, FeatureFunction, FeatureSet, LinearModel, OptimalDesign, Result,
+    SVector, Vector1,
 };
 
 #[derive(Feature)]

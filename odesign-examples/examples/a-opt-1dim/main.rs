@@ -1,7 +1,6 @@
-use nalgebra::{SVector, Vector1};
-use num_dual::DualNum;
 use odesign::{
-    AOptimality, Feature, FeatureFunction, FeatureSet, LinearModel, OptimalDesign, Result,
+    AOptimality, DualNum, Feature, FeatureFunction, FeatureSet, LinearModel, OptimalDesign, Result,
+    SVector, Vector1,
 };
 
 #[derive(Feature)]

@@ -35,16 +35,16 @@ fn derive_feature_impl(input: DeriveInput) -> syn::Result<proc_macro::TokenStrea
 
     let expanded = quote! {
         impl Feature<#dim> for #name {
-            fn val(&self, x: &nalgebra::SVector<f64, #dim>) -> f64 {
+            fn val(&self, x: &::odesign::__private::nalgebra::SVector<f64, #dim>) -> f64 {
                 self.f(&x)
             }
 
-            fn val_grad(&self, x: &nalgebra::SVector<f64, #dim>) -> (f64, nalgebra::SVector<f64,#dim>) {
-                num_dual::gradient(|v| self.f(&v), *x)
+            fn val_grad(&self, x: &::odesign::__private::nalgebra::SVector<f64, #dim>) -> (f64, ::odesign::__private::nalgebra::SVector<f64,#dim>) {
+                ::odesign::__private::num_dual::gradient(|v| self.f(&v), *x)
             }
 
-            fn val_grad_hes(&self, x: &nalgebra::SVector<f64, #dim>) -> (f64, nalgebra::SVector<f64, #dim>, nalgebra::SMatrix<f64, #dim, #dim>) {
-                num_dual::hessian(|v| self.f(&v), *x)
+            fn val_grad_hes(&self, x: &::odesign::__private::nalgebra::SVector<f64, #dim>) -> (f64, ::odesign::__private::nalgebra::SVector<f64, #dim>, ::odesign::__private::nalgebra::SMatrix<f64, #dim, #dim>) {
+                ::odesign::__private::num_dual::hessian(|v| self.f(&v), *x)
             }
         }
     };

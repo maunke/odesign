@@ -13,9 +13,7 @@ use std::sync::Arc;
 /// feature map $\phi:\mathbb R^m \to\mathbb R^n$ and coefficient $\beta \in \mathbb R^n$.
 ///
 /// ```
-/// use nalgebra::SVector;
-/// use num_dual::DualNum;
-/// use odesign::{Feature, FeatureFunction, FeatureSet, LinearModel};
+/// use odesign::{DualNum, Feature, FeatureFunction, FeatureSet, LinearModel, SVector};
 ///
 /// // Generic monomial (R^2 -> R) with derivatives by
 /// // providing its feature function x^i * y^j only

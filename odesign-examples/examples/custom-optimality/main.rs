@@ -1,9 +1,8 @@
 use faer::Mat;
-use nalgebra::{SVector, Vector1};
-use num_dual::DualNum;
 use odesign::{
-    DOptimality, Feature, FeatureFunction, FeatureSet, LinearModel, MatrixDRows, NLPFunctionTarget,
-    OptimalDesign, Optimalities, Optimality, Result, WeightedOptimality,
+    DOptimality, DualNum, Feature, FeatureFunction, FeatureSet, LinearModel, MatrixDRows,
+    NLPFunctionTarget, OptimalDesign, Optimalities, Optimality, Result, SVector, Vector1,
+    WeightedOptimality,
 };
 use std::sync::Arc;
 
