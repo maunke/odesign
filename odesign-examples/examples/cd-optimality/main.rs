@@ -30,9 +30,9 @@ fn main() -> Result<()> {
     // define linear model with features
     let lm: Arc<_> = LinearModel::from(fs).into();
     // define optimality, bound and init design args
-    let d_optimality: Arc<_> = DOptimality::new(lm.clone()).into();
+    let d_optimality = DOptimality::new(lm.clone());
     let c = DVector::from_vec(vec![0., 0., 1.]);
-    let c_optimality: Arc<_> = COptimality::new(lm, c.into())?.into();
+    let c_optimality = COptimality::new(lm, c.into())?;
     let optimalities: Optimalities<1> = vec![
         WeightedOptimality::new(d_optimality, 1.),
         WeightedOptimality::new(c_optimality, 1.),

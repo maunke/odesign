@@ -64,7 +64,7 @@ fn main() -> Result<()> {
     fs.push(SensitivityKm);
 
     let lm: Arc<_> = LinearModel::from(fs).into();
-    let opt: Arc<_> = DOptimality::new(lm).into();
+    let opt = DOptimality::new(lm);
 
     let lower = Vector1::new(0.01);
     let upper = Vector1::new(50.0);

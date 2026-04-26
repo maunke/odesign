@@ -137,8 +137,8 @@ fn main() -> Result<()> {
     let lm = LinearModel::from(fs);
 
     // define optimality, bound and init design args
-    let d_optimality: Arc<_> = DOptimality::new(lm.into()).into();
-    let costs_optimality: Arc<_> = MeasurementCosts {}.into();
+    let d_optimality = DOptimality::new(lm.into());
+    let costs_optimality = MeasurementCosts {};
     let optimalities: Optimalities<1> = vec![
         WeightedOptimality::new(d_optimality, 1.),
         WeightedOptimality::new(costs_optimality, 10.),

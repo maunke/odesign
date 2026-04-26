@@ -425,7 +425,10 @@ impl<const D: usize> OptimalDesign<D> {
     }
 
     /// Returns the initialized solver with given optimality
-    pub fn with_optimality(mut self, optimality: Arc<dyn Optimality<D> + Send + Sync>) -> Self {
+    pub fn with_optimality<T: Optimality<D> + Send + Sync + 'static>(
+        mut self,
+        optimality: T,
+    ) -> Self {
         self.optimalities = vec![WeightedOptimality::new(optimality, 1.)];
         self
     }

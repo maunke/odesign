@@ -3,7 +3,6 @@ use num_dual::DualNum;
 use odesign::{
     DOptimality, Feature, FeatureFunction, FeatureSet, LinearModel, OptimalDesign, Result,
 };
-use std::sync::Arc;
 
 #[derive(Feature)]
 #[dimension = 2]
@@ -69,7 +68,7 @@ fn main() -> Result<()> {
     let q = Vector2::new(21, 21);
     let lower = Vector2::new(-1., -1.);
     let upper = Vector2::new(1., 1.);
-    let optimality = Arc::new(DOptimality::new(lm.into()));
+    let optimality = DOptimality::new(lm.into());
     let mut od = OptimalDesign::new()
         .with_optimality(optimality)
         .with_bound_args(lower, upper)?

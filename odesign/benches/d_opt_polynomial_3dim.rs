@@ -4,7 +4,6 @@ use num_dual::DualNum;
 use odesign::{
     DOptimality, Feature, FeatureFunction, FeatureSet, LinearModel, OptimalDesign, Result,
 };
-use std::sync::Arc;
 use std::time::Duration;
 
 #[derive(Feature)]
@@ -42,7 +41,7 @@ fn polynomial_3dim(grid_size: usize) -> Result<()> {
     let q = Vector3::new(grid_size, grid_size, grid_size);
     let lower = Vector3::new(-1., -1., -1.);
     let upper = Vector3::new(1., 1., 1.);
-    let optimality = Arc::new(DOptimality::new(lm.into()));
+    let optimality = DOptimality::new(lm.into());
     let mut od = OptimalDesign::new()
         .with_optimality(optimality)
         .with_bound_args(lower, upper)?

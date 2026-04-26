@@ -22,8 +22,11 @@ pub struct WeightedOptimality<const D: usize> {
 
 impl<const D: usize> WeightedOptimality<D> {
     /// Creates a new [WeightedOptimality] from an optimality and its weight.
-    pub fn new(optimality: Arc<dyn Optimality<D> + Send + Sync>, weight: f64) -> Self {
-        Self { optimality, weight }
+    pub fn new<T: Optimality<D> + Send + Sync + 'static>(optimality: T, weight: f64) -> Self {
+        Self {
+            optimality: Arc::new(optimality),
+            weight,
+        }
     }
 }
 

@@ -45,10 +45,9 @@ fn test_optimal_design_cdcrit_poly_2() -> Result<()> {
     let q: SVector<usize, 1> = Vector1::new(101);
     let lower = Vector1::new(-1.);
     let upper = Vector1::new(1.);
-    let d_opt = Arc::new(DOptimality::new(lm.clone()));
+    let d_opt = DOptimality::new(lm.clone());
     let c = DVector::from_vec(vec![0., 0., 1.]);
     let c_opt = COptimality::new(lm.clone(), c.into())?;
-    let c_opt = Arc::new(c_opt);
     let optimalities = vec![
         WeightedOptimality::new(d_opt, 1.),
         WeightedOptimality::new(c_opt, 1.),
@@ -89,7 +88,7 @@ fn test_optimal_design_dcrit_poly_3() -> Result<()> {
     let q: SVector<usize, 1> = Vector1::new(101);
     let lower = Vector1::new(-1.);
     let upper = Vector1::new(1.);
-    let optimality = Arc::new(DOptimality::new(lm.into()));
+    let optimality = DOptimality::new(lm.into());
     let bound = DesignBound::new(lower, upper)?;
     let mut od = OptimalDesign::new()
         .with_optimality(optimality)
@@ -122,7 +121,7 @@ fn test_optimal_design_dcrit_poly_1() -> Result<()> {
     let q: SVector<usize, 1> = Vector1::new(101);
     let lower = Vector1::new(-1.);
     let upper = Vector1::new(1.);
-    let optimality = Arc::new(DOptimality::new(lm.into()));
+    let optimality = DOptimality::new(lm.into());
     let grid = Grid::new(lower, upper, q)?;
     let mut od = OptimalDesign::new()
         .with_optimality(optimality)
@@ -157,9 +156,8 @@ fn test_optimal_design_ccrit() -> Result<()> {
     let upper = Vector1::new(1.);
     let c = DVector::from_vec(vec![0., 0., 1.]);
     let c_opt = COptimality::new(lm.into(), c.into())?;
-    let optimality = Arc::new(c_opt);
     let mut od = OptimalDesign::new()
-        .with_optimality(optimality)
+        .with_optimality(c_opt)
         .with_bound_args(lower, upper)?
         .with_init_design_grid_args(lower, upper, q)?;
     let design = od.solve();
@@ -189,7 +187,7 @@ fn test_optimal_design_acrit_poly_1() -> Result<()> {
     let q: SVector<usize, 1> = Vector1::new(101);
     let lower = Vector1::new(-1.);
     let upper = Vector1::new(1.);
-    let optimality = Arc::new(AOptimality::new(lm.into()));
+    let optimality = AOptimality::new(lm.into());
     let grid = Grid::new(lower, upper, q)?;
     let mut od = OptimalDesign::new()
         .with_optimality(optimality)
@@ -222,7 +220,7 @@ fn test_optimal_design_dcrit_poly_1_custom_bound() -> Result<()> {
     let q: SVector<usize, 1> = Vector1::new(101);
     let lower = Vector1::new(-0.9);
     let upper = Vector1::new(0.9);
-    let optimality = Arc::new(DOptimality::new(lm.into()));
+    let optimality = DOptimality::new(lm.into());
     let grid = Grid::new(lower, upper, q)?;
     let design_bound_const: Arc<_> = CustomBoundConstraint {}.into();
     let custom_bound = CustomDesignBound::new(design_bound_const);
@@ -263,9 +261,9 @@ fn test_optimal_design_dcrit_costscrit_poly_3() -> Result<()> {
     let supp = init_grid.points.union(&measurements);
     let init_design = Design::new_from_supp(supp);
 
-    let d_opt = Arc::new(DOptimality::new(lm.into()));
+    let d_opt = DOptimality::new(lm.into());
     let alpha = 1.0;
-    let costs_opt: Arc<_> = CostsOptimality::new(measurements, alpha).into();
+    let costs_opt = CostsOptimality::new(measurements, alpha);
     let optimalities: Optimalities<1> = vec![
         WeightedOptimality::new(d_opt, 1.),
         WeightedOptimality::new(costs_opt, 1.),
