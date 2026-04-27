@@ -33,7 +33,54 @@ impl DesignCrit {
     }
 }
 
+/// Contains measurements
+#[derive(Default, Clone)]
+pub struct Measurements<const D: usize> {
+    /// Measurements at point x.
+    pub x: MatrixDRows<D>,
+    /// Measurement values y to corresponding points x.
+    pub y: DVector<f64>,
+}
+
+impl<const D: usize> Measurements<D> {
+    /// Creates measurements by providing measured values and corresponding points.
+    pub fn new(x: MatrixDRows<D>, y: DVector<f64>) -> Result<Self> {
+        if x.ncols() != y.nrows() {
+            Err(Error::ShapeMismatch {
+                mat1: "x",
+                mat2: "y",
+                dim1: x.ncols(),
+                dim2: y.nrows(),
+                shape1: x.shape(),
+                shape2: y.shape(),
+            })
+        } else {
+            Ok(Self { x, y })
+        }
+    }
+    /// Adds new measurements.
+    pub fn append(&mut self, measurements: Measurements<D>) {
+        let x_ncols = self.x.ncols();
+        let y_nrows = self.y.nrows();
+
+        let mut x = std::mem::take(&mut self.x);
+        let mut y = std::mem::take(&mut self.y);
+
+        x = x.insert_columns(x_ncols, measurements.x.ncols(), 0.0);
+        x.columns_mut(x_ncols, measurements.x.ncols())
+            .copy_from(&measurements.x);
+
+        y = y.insert_rows(y_nrows, measurements.y.nrows(), 0.0);
+        y.rows_mut(y_nrows, measurements.y.nrows())
+            .copy_from(&measurements.y);
+
+        self.x = x;
+        self.y = y;
+    }
+}
+
 /// Contains the column-orientated support vectors and their replications.
+#[derive(Clone, Debug)]
 pub struct DiscreteDesign<const D: usize> {
     /// Replications
     pub replications: DVector<usize>,
@@ -41,19 +88,48 @@ pub struct DiscreteDesign<const D: usize> {
     pub supp: MatrixDRows<D>,
 }
 
+#[derive(Clone, Debug)]
+pub enum ReplicationFactor {
+    Fixed(usize),
+    Weighted(f64),
+}
+
 impl<const D: usize> DiscreteDesign<D> {
     /// Map the continuous design to a discrete design.
     /// replications = ceil(weight * replication_factor)
-    pub fn from_design(design: &Design<D>, replication_factor: f64) -> Self {
+    pub fn from_design(design: &Design<D>, replication_factor: &ReplicationFactor) -> Self {
         let supp = design.supp.clone();
         let replications = DVector::from_iterator(
             design.weights.len(),
-            design
-                .weights
-                .iter()
-                .map(|&w| (w * replication_factor).ceil() as usize),
+            design.weights.iter().map(|&w| match *replication_factor {
+                ReplicationFactor::Fixed(n) => n,
+                ReplicationFactor::Weighted(f) => (w * f).ceil() as usize,
+            }),
         );
         Self { replications, supp }
+    }
+
+    pub fn diff_measurements(&self, measurements: &Measurements<D>) -> Self {
+        let mut d = self.clone();
+        let mut measurements_filtered = vec![false; measurements.x.len()];
+        for (s, r) in zip(d.supp.column_iter(), d.replications.iter_mut()) {
+            for (idx, x) in measurements.x.column_iter().enumerate() {
+                if measurements_filtered[idx] {
+                    continue;
+                }
+                let diff = (s - x).norm();
+                if diff < 1e-8 {
+                    if *r <= 1 {
+                        *r = 0;
+                    } else {
+                        // *r -= 1;
+                        *r = 0;
+                    }
+                    measurements_filtered[idx] = true;
+                }
+            }
+        }
+        d
     }
 }
 
@@ -847,12 +923,12 @@ mod tests {
         let weights = DVector::from(vec![0.8, 0.2]);
         let design = Design::new(weights, supp)?;
 
-        let replication_factor = 10.0;
-        let discrete_design = DiscreteDesign::from_design(&design, replication_factor);
+        let replication_factor = ReplicationFactor::Weighted(10.0);
+        let discrete_design = DiscreteDesign::from_design(&design, &replication_factor);
         assert_eq!(discrete_design.replications, DVector::from_vec(vec![8, 2]));
 
-        let replication_factor = 1.0;
-        let discrete_design = DiscreteDesign::from_design(&design, replication_factor);
+        let replication_factor = ReplicationFactor::Fixed(1);
+        let discrete_design = DiscreteDesign::from_design(&design, &replication_factor);
         assert_eq!(discrete_design.replications, DVector::from_vec(vec![1, 1]));
         Ok(())
     }
@@ -878,6 +954,59 @@ mod tests {
             EQ_EPS,
             EQ_MAX_REL
         ));
+        Ok(())
+    }
+    #[test]
+    fn test_discrete_design_measurements_diff() -> Result<()> {
+        let supp = MatrixDRows::<2>::from_vec(vec![1., 1., 2., 2.]);
+        let replications = DVector::from(vec![1, 2]);
+        let discrete_design = DiscreteDesign { supp, replications };
+        let measurements = Measurements {
+            x: MatrixDRows::<2>::from_vec(vec![1., 1., 2., 2., 1., 1., 2., 2., 3., 3.]),
+            y: DVector::from(vec![1., 1., 1., 1., 1.]),
+        };
+
+        let diff_discrete_design = discrete_design.diff_measurements(&measurements);
+        assert_eq!(diff_discrete_design.replications, DVector::from(vec![0, 0]));
+        Ok(())
+    }
+
+    #[test]
+    fn test_measurements_append() -> Result<()> {
+        let mut measurements = Measurements::new(
+            MatrixDRows::<2>::from_vec(vec![1., 1., 2., 2.]),
+            DVector::from(vec![1., 1.]),
+        )?;
+        let new_measurements = Measurements::new(
+            MatrixDRows::<2>::from_vec(vec![1., 1., 2., 3.]),
+            DVector::from(vec![1., 1.]),
+        )?;
+
+        measurements.append(new_measurements);
+
+        let x = MatrixDRows::<2>::from_vec(vec![1., 1., 2., 2., 1., 1., 2., 3.]);
+        let y = DVector::from(vec![1., 1., 1., 1.]);
+        assert_eq!(measurements.x, x);
+        assert_eq!(measurements.y, y);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_measurements_default_append() -> Result<()> {
+        let mut measurements = Measurements::default();
+        let new_measurements = Measurements::new(
+            MatrixDRows::<2>::from_vec(vec![1., 1., 2., 3.]),
+            DVector::from(vec![1., 1.]),
+        )?;
+
+        measurements.append(new_measurements);
+
+        let x = MatrixDRows::<2>::from_vec(vec![1., 1., 2., 3.]);
+        let y = DVector::from(vec![1., 1.]);
+        assert_eq!(measurements.x, x);
+        assert_eq!(measurements.y, y);
+
         Ok(())
     }
 }
