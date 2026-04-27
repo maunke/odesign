@@ -66,6 +66,7 @@ pub struct Design<const D: usize> {
     /// The support matrix contains the set of column-orientated support vectors.
     pub supp: MatrixDRows<D>,
     crit: DesignCrit,
+    static_supp: MatrixDRows<D>,
 }
 
 impl<const D: usize> Display for Design<D> {
@@ -110,10 +111,12 @@ impl<const D: usize> Design<D> {
             });
         }
         let crit = DesignCrit::new();
+        let static_supp = Default::default();
         Ok(Self {
             weights,
             supp,
             crit,
+            static_supp,
         })
     }
 
@@ -121,10 +124,12 @@ impl<const D: usize> Design<D> {
     pub fn new_from_supp(supp: MatrixDRows<D>) -> Self {
         let weights = DVector::from_element(supp.ncols(), 1.0 / (supp.ncols() as f64));
         let crit = DesignCrit::new();
+        let static_supp = Default::default();
         Self {
             weights,
             supp,
             crit,
+            static_supp,
         }
     }
 
@@ -159,6 +164,12 @@ impl<const D: usize> Design<D> {
     fn most_weighted_supp(&self) -> (SVector<f64, D>, f64) {
         let (id, w) = self.weights.argmax();
         (self.supp.column(id).into(), w)
+    }
+
+    /// With static support to consider when collapsing
+    pub fn with_static_supp(mut self, static_supp: MatrixDRows<D>) -> Self {
+        self.static_supp = static_supp;
+        self
     }
 
     /// Filters out support vectors with a weight lower lower equal to the filter criterium and
@@ -210,10 +221,21 @@ impl<const D: usize> Design<D> {
                 clusters.push(cluster);
             }
         });
-        let (supp, weights): (MatrixDRows<D>, DVector<f64>) = clusters
+        let (mut supp, weights): (MatrixDRows<D>, DVector<f64>) = clusters
             .iter()
             .map(|c| (c.most_weighted_supp().0, c.weights.sum()))
             .unzip();
+
+        // move clusters to static support vectors if within crit collapse radius
+        for mut support_vector in supp.column_iter_mut() {
+            for static_vector in self.static_supp.column_iter_mut() {
+                let distance = (&static_vector - &support_vector).norm();
+                if distance < self.crit.collapse {
+                    support_vector.copy_from(&static_vector);
+                }
+            }
+        }
+
         self.supp = supp;
         self.weights = weights;
     }
@@ -832,6 +854,30 @@ mod tests {
         let replication_factor = 1.0;
         let discrete_design = DiscreteDesign::from_design(&design, replication_factor);
         assert_eq!(discrete_design.replications, DVector::from_vec(vec![1, 1]));
+        Ok(())
+    }
+
+    #[test]
+    fn static_supp_collapse() -> Result<()> {
+        let static_supp = MatrixDRows::<2>::from_vec(vec![1.01, 1.01]);
+        let supp = MatrixDRows::<2>::from_vec(vec![
+            1., 1., 1.02, 1.02, 1.03, 1.03, 1.1, 1.1, 1.2, 1.2, 2., 2.,
+        ]);
+        let weights = DVector::from(vec![0.6, 0.1, 0.05, 0.05, 0.1, 0.1]);
+        let mut design = Design::new(weights, supp)?
+            .with_static_supp(static_supp)
+            .with_collapse_crit(0.1);
+        design.collapse();
+
+        assert_eq!(
+            design.supp,
+            MatrixDRows::<2>::from_vec(vec![1.01, 1.01, 1.2, 1.2, 2., 2.])
+        );
+        assert!(design.weights.relative_eq(
+            &DVector::from_vec(vec![0.8, 0.1, 0.1]),
+            EQ_EPS,
+            EQ_MAX_REL
+        ));
         Ok(())
     }
 }
