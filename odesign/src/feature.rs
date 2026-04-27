@@ -1,8 +1,26 @@
 use crate::{Error, Result};
 use nalgebra::{SMatrix, SVector};
 use num_dual::DualNum;
+use std::any::Any;
 use std::collections::HashSet;
 use std::sync::Arc;
+
+/// Helper trait providing `as_any` as a supertrait of [`Feature`]. Blanket-implemented for every
+/// `Feature<D>` implementor, so users never write `as_any` themselves and the impl does not leak
+/// onto unrelated `'static` types.
+pub trait FeatureAsAny<const D: usize>: 'static {
+    /// Returns a reference to the feature as a trait object.
+    fn as_any(&self) -> &dyn Any;
+}
+
+impl<T, const D: usize> FeatureAsAny<D> for T
+where
+    T: Feature<D> + 'static,
+{
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+}
 
 /// Required value function for [Feature] derive.
 pub trait FeatureFunction<const N: usize> {
@@ -11,7 +29,7 @@ pub trait FeatureFunction<const N: usize> {
 }
 
 /// Defines the value, gradient and hessian functions of a feature.
-pub trait Feature<const D: usize> {
+pub trait Feature<const D: usize>: FeatureAsAny<D> {
     /// Value function.
     fn val(&self, x: &SVector<f64, D>) -> f64;
     /// Value and gradient function.
@@ -72,6 +90,11 @@ impl<const D: usize> FeatureSet<D> {
             .collect::<Result<Vec<_>>>()?;
         Ok(FeatureSet { features })
     }
+
+    /// Returns a slice of the features.
+    pub fn as_slice(&self) -> &[Arc<dyn Feature<D> + Send + Sync>] {
+        &self.features
+    }
 }
 
 impl<const D: usize, F> From<Vec<F>> for FeatureSet<D>
@@ -81,6 +104,20 @@ where
     fn from(features: Vec<F>) -> Self {
         Self {
             features: features
+                .into_iter()
+                .map(|f| Arc::new(f) as Arc<dyn Feature<D> + Send + Sync>)
+                .collect(),
+        }
+    }
+}
+
+impl<const D: usize, F> FromIterator<F> for FeatureSet<D>
+where
+    F: Feature<D> + Send + Sync + 'static,
+{
+    fn from_iter<I: IntoIterator<Item = F>>(iter: I) -> Self {
+        Self {
+            features: iter
                 .into_iter()
                 .map(|f| Arc::new(f) as Arc<dyn Feature<D> + Send + Sync>)
                 .collect(),
@@ -107,6 +144,8 @@ impl<const D: usize> FromIterator<Arc<dyn Feature<D> + Send + Sync>> for Feature
 
 #[cfg(test)]
 mod tests {
+    use std::iter::zip;
+
     use super::*;
     use crate::Result;
     use nalgebra::{Matrix2, Vector2};
@@ -188,6 +227,24 @@ mod tests {
             Err(crate::Error::IndexOutOfBounds { index: 3, len: 3 })
         ));
         assert_eq!(fs.subset(0..3)?.len(), 3);
+        Ok(())
+    }
+
+    #[test]
+    fn as_any_feature() -> Result<()> {
+        let exponents = vec![(0, 0), (1, 0), (0, 1), (1, 1)];
+        let fs: FeatureSet<2> = exponents
+            .iter()
+            .map(|exp| Monomial { i: exp.0, j: exp.1 })
+            .collect::<FeatureSet<2>>();
+
+        zip(exponents.iter(), fs.as_slice().iter()).for_each(|(exp, feat)| {
+            let m = feat
+                .as_any()
+                .downcast_ref::<Monomial>()
+                .expect("feature is not known");
+            assert_eq!(&(m.i, m.j), exp);
+        });
         Ok(())
     }
 }

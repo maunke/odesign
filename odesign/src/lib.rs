@@ -14,7 +14,7 @@ mod optimality;
 mod utils;
 
 pub use error::{Error, Result};
-pub use feature::{Feature, FeatureFunction, FeatureSet};
+pub use feature::{Feature, FeatureAsAny, FeatureFunction, FeatureSet};
 pub use grid::Grid;
 pub use interior_point_method::{
     LinearEqualityConstraint, NLPFunctionTarget, NLPSolver, NLPSolverConstraints, NLPSolverOptions,
