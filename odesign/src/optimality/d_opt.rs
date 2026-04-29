@@ -1,6 +1,6 @@
 use crate::{IntoSVector, LinearModel, MatrixDRows, NLPFunctionTarget, Optimality};
 use faer::Mat;
-use faer::linalg::solvers::{PartialPivLu, Solve};
+use faer::linalg::solvers::{Llt, PartialPivLu, Solve};
 use nalgebra::SVector;
 use std::sync::Arc;
 
@@ -65,15 +65,19 @@ impl<const D: usize> DMatrixMean<D> {
             design,
         }
     }
+
     #[inline(always)]
-    fn fim_det(&self, x: &Mat<f64>) -> (Mat<f64>, f64) {
+    fn fim_chol_log_det(&self, x: &Mat<f64>) -> Option<(Llt<f64>, f64)> {
         let fim = self.linear_model.fim_from_design_t(&self.design_t, x);
-        let det = fim.determinant();
-        (fim, det)
+        let chol = fim.llt(faer::Side::Lower).ok()?;
+        let l = chol.L();
+        let log_det: f64 = (0..l.nrows()).map(|i| l[(i, i)].ln()).sum::<f64>() * 2.0;
+        Some((chol, log_det))
     }
+
     #[inline(always)]
-    fn phi(&self, fim: Mat<f64>) -> Mat<f64> {
-        let s = fim.llt(faer::Side::Lower).unwrap().solve(&self.design_t);
+    fn phi_from_chol(&self, chol: &Llt<f64>) -> Mat<f64> {
+        let s = chol.solve(&self.design_t);
         &self.design * s
     }
 }
@@ -81,42 +85,47 @@ impl<const D: usize> DMatrixMean<D> {
 impl<const D: usize> NLPFunctionTarget for DMatrixMean<D> {
     #[inline(always)]
     fn val(&self, x: &Mat<f64>) -> f64 {
-        let (_, det) = self.fim_det(x);
-        -det.ln()
+        match self.fim_chol_log_det(x) {
+            Some((_, log_det)) => -log_det,
+            None => f64::INFINITY,
+        }
     }
 
     #[inline(always)]
     fn val_grad(&self, x: &Mat<f64>) -> (f64, Mat<f64>) {
-        let (fim, det) = self.fim_det(x);
-        let phi = self.phi(fim);
-        let val = -det.ln();
+        let Some((chol, log_det)) = self.fim_chol_log_det(x) else {
+            return (f64::INFINITY, Mat::<f64>::zeros(x.nrows(), 1));
+        };
+        let phi = self.phi_from_chol(&chol);
         let mut grad = Mat::<f64>::zeros(phi.nrows(), 1);
         for row in 0..grad.nrows() {
-            let v = phi[(row, row)];
-            grad[(row, 0)] = -v;
+            grad[(row, 0)] = -phi[(row, row)];
         }
-        (val, grad)
+        (-log_det, grad)
     }
 
     #[inline(always)]
     fn val_grad_hes(&self, x: &Mat<f64>) -> (f64, Mat<f64>, Mat<f64>) {
-        let (fim, det) = self.fim_det(x);
-        let phi = self.phi(fim);
-        let val = -det.ln();
+        let Some((chol, log_det)) = self.fim_chol_log_det(x) else {
+            let n = x.nrows();
+            return (
+                f64::INFINITY,
+                Mat::<f64>::zeros(n, 1),
+                Mat::<f64>::zeros(n, n),
+            );
+        };
+        let mut phi = self.phi_from_chol(&chol);
         let mut grad = Mat::<f64>::zeros(phi.nrows(), 1);
         for row in 0..grad.nrows() {
-            let v = phi[(row, row)];
-            grad[(row, 0)] = -v;
+            grad[(row, 0)] = -phi[(row, row)];
         }
-        let mut hes = phi;
-        for col in 0..hes.ncols() {
-            for row in col..hes.nrows() {
-                let v = hes[(row, col)];
-                hes[(row, col)] = v * v;
+        for col in 0..phi.ncols() {
+            for row in col..phi.nrows() {
+                let v = phi[(row, col)];
+                phi[(row, col)] = v * v;
             }
         }
-
-        (val, grad, hes)
+        (-log_det, grad, phi)
     }
 }
 
