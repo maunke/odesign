@@ -120,7 +120,7 @@ impl<const D: usize> NLPFunctionTarget for CMatrixMeans<D> {
         let factor = -1. / phi;
         theta
             .col_iter_mut()
-            .for_each(|c| c.iter_mut().for_each(|r| *r *= factor * *r));
+            .for_each(|c| c.iter_mut().for_each(|r| *r = *r * factor * *r));
         let grad = theta;
         (val, grad)
     }
@@ -132,7 +132,7 @@ impl<const D: usize> NLPFunctionTarget for CMatrixMeans<D> {
         let factor = -1. / phi;
         let mut grad = theta.clone();
         grad.col_iter_mut()
-            .for_each(|c| c.iter_mut().for_each(|r| *r *= factor * *r));
+            .for_each(|c| c.iter_mut().for_each(|r| *r = *r * factor * *r));
 
         let factor = 2. / phi;
         let theta_outer = factor * theta.col(0) * theta.col(0).transpose();
