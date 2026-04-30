@@ -90,11 +90,7 @@ impl<const D: usize> NLPFunctionTarget for MatrixMean<D> {
         let (fim_inv, trace) = self.fim_inv_trace(x);
         let z = self.z_one_and_two(&fim_inv).1;
         let val = trace.ln();
-        let mut grad = Mat::<f64>::zeros(z.nrows(), 1);
-        for row in 0..grad.nrows() {
-            let v = z[(row, row)];
-            grad[(row, 0)] = v;
-        }
+        let grad = z.diagonal().column_vector().as_mat().to_owned();
         (val, grad)
     }
 
@@ -103,11 +99,7 @@ impl<const D: usize> NLPFunctionTarget for MatrixMean<D> {
         let (fim_inv, trace) = self.fim_inv_trace(x);
         let (z_one, z_two) = self.z_one_and_two(&fim_inv);
         let val = trace.ln();
-        let mut grad = Mat::<f64>::zeros(z_two.nrows(), 1);
-        for row in 0..grad.nrows() {
-            let v = z_two[(row, row)];
-            grad[(row, 0)] = v;
-        }
+        let grad = z_two.diagonal().column_vector().as_mat().to_owned();
         let mut hes = z_one;
         for col in 0..hes.ncols() {
             for row in col..hes.nrows() {

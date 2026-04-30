@@ -1,5 +1,6 @@
 use crate::{IntoSVector, LinearModel, MatrixDRows, NLPFunctionTarget, Optimality};
 use faer::Mat;
+use faer::diag::AsDiagRef;
 use faer::linalg::solvers::{Llt, PartialPivLu, Solve};
 use nalgebra::SVector;
 use std::sync::Arc;
@@ -71,7 +72,13 @@ impl<const D: usize> DMatrixMean<D> {
         let fim = self.linear_model.fim_from_design_t(&self.design_t, x);
         let chol = fim.llt(faer::Side::Lower).ok()?;
         let l = chol.L();
-        let log_det: f64 = (0..l.nrows()).map(|i| l[(i, i)].ln()).sum::<f64>() * 2.0;
+        let log_det = l
+            .diagonal()
+            .column_vector()
+            .iter()
+            .map(|x| x.ln())
+            .sum::<f64>()
+            * 2.0;
         Some((chol, log_det))
     }
 
@@ -97,10 +104,7 @@ impl<const D: usize> NLPFunctionTarget for DMatrixMean<D> {
             return (f64::INFINITY, Mat::<f64>::zeros(x.nrows(), 1));
         };
         let phi = self.phi_from_chol(&chol);
-        let mut grad = Mat::<f64>::zeros(phi.nrows(), 1);
-        for row in 0..grad.nrows() {
-            grad[(row, 0)] = -phi[(row, row)];
-        }
+        let grad = -phi.diagonal().column_vector().as_mat().to_owned();
         (-log_det, grad)
     }
 
@@ -115,10 +119,7 @@ impl<const D: usize> NLPFunctionTarget for DMatrixMean<D> {
             );
         };
         let mut phi = self.phi_from_chol(&chol);
-        let mut grad = Mat::<f64>::zeros(phi.nrows(), 1);
-        for row in 0..grad.nrows() {
-            grad[(row, 0)] = -phi[(row, row)];
-        }
+        let grad = -phi.diagonal().column_vector().as_mat().to_owned();
         for col in 0..phi.ncols() {
             for row in col..phi.nrows() {
                 let v = phi[(row, col)];
