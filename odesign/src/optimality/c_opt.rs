@@ -1,6 +1,6 @@
 use crate::{Error, IntoSVector, LinearModel, MatrixDRows, NLPFunctionTarget, Optimality, Result};
-use faer::Mat;
 use faer::linalg::solvers::Solve;
+use faer::{Mat, unzip, zip};
 use faer_ext::IntoFaer;
 use nalgebra::{DVector, SVector};
 use std::sync::Arc;
@@ -114,15 +114,14 @@ impl<const D: usize> NLPFunctionTarget for CMatrixMeans<D> {
     }
     fn val_grad(&self, x: &Mat<f64>) -> (f64, Mat<f64>) {
         let (_, fim_e_n) = self.fim_e_n(x);
-        let theta = &self.design * &fim_e_n;
+        let mut theta = &self.design * &fim_e_n;
         let phi: f64 = (self.c.transpose() * fim_e_n)[(0, 0)];
         let val = phi.ln();
         let factor = -1. / phi;
-        let mut grad = Mat::<f64>::zeros(x.nrows(), 1);
-        for row in 0..grad.nrows() {
-            let v = theta[(row, 0)];
-            grad[(row, 0)] = factor * v * v;
-        }
+        theta
+            .col_iter_mut()
+            .for_each(|c| c.iter_mut().for_each(|r| *r *= factor * *r));
+        let grad = theta;
         (val, grad)
     }
     fn val_grad_hes(&self, x: &Mat<f64>) -> (f64, Mat<f64>, Mat<f64>) {
@@ -131,23 +130,15 @@ impl<const D: usize> NLPFunctionTarget for CMatrixMeans<D> {
         let phi: f64 = (self.c.transpose() * fim_e_n)[(0, 0)];
         let val = phi.ln();
         let factor = -1. / phi;
-        let mut grad = Mat::<f64>::zeros(x.nrows(), 1);
-        for row in 0..grad.nrows() {
-            let v = theta[(row, 0)];
-            grad[(row, 0)] = factor * v * v;
-        }
+        let mut grad = theta.clone();
+        grad.col_iter_mut()
+            .for_each(|c| c.iter_mut().for_each(|r| *r *= factor * *r));
+
         let factor = 2. / phi;
         let theta_outer = factor * theta.col(0) * theta.col(0).transpose();
         let grad_outer = grad.col(0) * grad.col(0).transpose();
         let mut hes = &self.design * fim.partial_piv_lu().solve(&self.design_t);
-        for col in 0..hes.ncols() {
-            for row in col..hes.nrows() {
-                let v = hes[(row, col)];
-                let t_v = theta_outer[(row, col)];
-                hes[(row, col)] = v * t_v;
-            }
-        }
-        hes += grad_outer;
+        zip!(&mut hes, &theta_outer, &grad_outer).for_each(|unzip!(h, t, g)| *h = *h * *t + *g);
         (val, grad, hes)
     }
 }

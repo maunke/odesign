@@ -1,6 +1,5 @@
 use crate::{IntoSVector, LinearModel, MatrixDRows, NLPFunctionTarget, Optimality};
 use faer::Mat;
-use faer::diag::AsDiagRef;
 use faer::linalg::solvers::{Llt, PartialPivLu, Solve};
 use nalgebra::SVector;
 use std::sync::Arc;
@@ -120,12 +119,9 @@ impl<const D: usize> NLPFunctionTarget for DMatrixMean<D> {
         };
         let mut phi = self.phi_from_chol(&chol);
         let grad = -phi.diagonal().column_vector().as_mat().to_owned();
-        for col in 0..phi.ncols() {
-            for row in col..phi.nrows() {
-                let v = phi[(row, col)];
-                phi[(row, col)] = v * v;
-            }
-        }
+        phi.col_iter_mut()
+            .enumerate()
+            .for_each(|(col_id, c)| c.iter_mut().skip(col_id).for_each(|r| *r *= *r));
         (-log_det, grad, phi)
     }
 }

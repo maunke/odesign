@@ -1,6 +1,6 @@
 use crate::{IntoSVector, LinearModel, MatrixDRows, NLPFunctionTarget, Optimality};
 use faer::linalg::solvers::DenseSolveCore;
-use faer::{Mat, Side};
+use faer::{Mat, Side, unzip, zip};
 use std::sync::Arc;
 
 #[cfg_attr(doc, katexit::katexit)]
@@ -97,19 +97,13 @@ impl<const D: usize> NLPFunctionTarget for MatrixMean<D> {
     #[inline(always)]
     fn val_grad_hes(&self, x: &Mat<f64>) -> (f64, Mat<f64>, Mat<f64>) {
         let (fim_inv, trace) = self.fim_inv_trace(x);
-        let (z_one, z_two) = self.z_one_and_two(&fim_inv);
+        let (mut z_one, z_two) = self.z_one_and_two(&fim_inv);
         let val = trace.ln();
         let grad = z_two.diagonal().column_vector().as_mat().to_owned();
-        let mut hes = z_one;
-        for col in 0..hes.ncols() {
-            for row in col..hes.nrows() {
-                let v1 = hes[(row, col)];
-                let v2 = z_two[(row, col)];
-                hes[(row, col)] = -2.0 * v1 * v2;
-            }
-        }
-
-        (val, grad, hes)
+        zip!(&mut z_one, &z_two).for_each(|unzip!(z1, z2)| {
+            *z1 *= -2.0 * z2;
+        });
+        (val, grad, z_one)
     }
 }
 
