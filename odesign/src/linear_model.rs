@@ -190,12 +190,15 @@ impl<const D: usize> LinearModel<D> {
     pub fn design_t(&self, data: &MatrixDRows<D>) -> Mat<f64> {
         let no_features = self.feature_set.len();
         let mut design_t = Mat::<f64>::zeros(no_features, data.ncols());
-        design_t.col_iter_mut().enumerate().for_each(|(j, col)| {
-            let x = data.column(j).into();
-            col.iter_mut()
-                .zip(self.feature_set.iter())
-                .for_each(|(c, f)| *c = f.val(&x));
-        });
+        design_t
+            .col_iter_mut()
+            .zip(data.column_iter())
+            .for_each(|(col, x)| {
+                let x = x.into();
+                col.iter_mut()
+                    .zip(self.feature_set.iter())
+                    .for_each(|(c, f)| *c = f.val(&x));
+            });
         design_t
     }
 
