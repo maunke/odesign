@@ -461,6 +461,7 @@ pub struct OptimalDesign<const D: usize> {
     constraint: DesignConstraint<D>,
     criteria: OptimalDesignCriteria,
     iterations: usize,
+    static_supp: MatrixDRows<D>,
 }
 
 impl<const D: usize> Display for OptimalDesign<D> {
@@ -501,12 +502,14 @@ impl<const D: usize> Default for OptimalDesign<D> {
         let constraint = DesignConstraint::Bound(bound);
         let criteria = OptimalDesignCriteria::default();
         let iterations = 0;
+        let static_supp = MatrixDRows::default();
         Self {
             optimalities,
             design,
             constraint,
             criteria,
             iterations,
+            static_supp,
         }
     }
 }
@@ -529,6 +532,12 @@ impl<const D: usize> OptimalDesign<D> {
         optimality: T,
     ) -> Self {
         self.optimalities = vec![WeightedOptimality::new(optimality, 1.)];
+        self
+    }
+
+    /// With static support vectors
+    pub fn with_static_supp(mut self, static_supp: MatrixDRows<D>) -> Self {
+        self.static_supp = static_supp;
         self
     }
 
@@ -725,7 +734,17 @@ impl<const D: usize> OptimalDesign<D> {
         let supp_size = self.design.supp.ncols();
         let supp_vec = (0..supp_size)
             .into_par_iter()
-            .map(|x_id| self.minimize_supp_x(self.design.supp.column(x_id).into(), x_id))
+            .map(|x_id| {
+                // Leave static support vectors at their positions.
+                for s in self.static_supp.column_iter() {
+                    let x = self.design.supp.column(x_id);
+                    let distance = (s - x).norm();
+                    if distance < 1e-8 {
+                        return DVector::from_vec(s.as_slice().to_vec());
+                    }
+                }
+                self.minimize_supp_x(self.design.supp.column(x_id).into(), x_id)
+            })
             .collect::<Vec<DVector<f64>>>();
         let supp_slice: Vec<f64> = supp_vec
             .iter()
