@@ -11,7 +11,13 @@ pub struct NLPSolverOptions {
     barrier_max_iter: u64,
     newton_max_iter: u64,
     backline_max_iter: u64,
-    barrier_mu: f64,
+    barrier_mu0: f64,
+    barrier_mu_increase: f64,
+    barrier_mu_increase_threshold: u64,
+    barrier_mu_decay: f64,
+    barrier_mu_decay_threshold: u64,
+    barrier_mu_min: f64,
+    barrier_mu_max: f64,
     barrier_t0: f64,
     backline_a: f64,
     backline_b: f64,
@@ -20,14 +26,20 @@ pub struct NLPSolverOptions {
 impl Default for NLPSolverOptions {
     fn default() -> Self {
         Self {
-            barrier_prec: 1e-8,
+            barrier_prec: 1e-12,
             newton_prec: 1e-6,
             barrier_max_iter: 1_000,
             newton_max_iter: 1_000,
-            backline_max_iter: 100,
-            barrier_mu: 5.,
-            barrier_t0: 50.,
-            backline_a: 0.8,
+            backline_max_iter: 200,
+            barrier_mu0: 20.,
+            barrier_mu_increase: 2.0,
+            barrier_mu_increase_threshold: 5,
+            barrier_mu_decay: 0.5,
+            barrier_mu_decay_threshold: 15,
+            barrier_mu_min: 2.,
+            barrier_mu_max: 50.,
+            barrier_t0: 1.,
+            backline_a: 1.0,
             backline_b: 0.8,
         }
     }
@@ -164,6 +176,37 @@ impl NLPBound {
     }
 }
 
+// Log Barrier Bound
+impl NLPFunctionTarget for NLPBound {
+    #[inline(always)]
+    fn val(&self, x: &Mat<f64>) -> f64 {
+        let mut val = 0.0;
+        zip!(x, &self.lower, &self.upper)
+            .for_each(|unzip!(x_i, l_i, u_i)| val += -(u_i - x_i).ln() - (x_i - l_i).ln());
+        val
+    }
+
+    #[inline(always)]
+    fn val_grad(&self, x: &Mat<f64>) -> (f64, Mat<f64>) {
+        let val = self.val(x);
+        let mut grad = Mat::<f64>::zeros(x.nrows(), 1);
+        zip!(&mut grad, x, &self.lower, &self.upper)
+            .for_each(|unzip!(g, v, l, u)| *g = 1.0 / (*u - *v) + 1.0 / (*l - *v));
+        (val, grad)
+    }
+
+    #[inline(always)]
+    fn val_grad_hes(&self, x: &Mat<f64>) -> (f64, Mat<f64>, Mat<f64>) {
+        let (val, grad) = self.val_grad(x);
+        let mut hes = Mat::<f64>::zeros(x.nrows(), x.nrows());
+        for i in 0..hes.nrows() {
+            hes[(i, i)] = 1.0 / (self.upper[(i, 0)] - x[(i, 0)]).powi(2)
+                + 1.0 / (self.lower[(i, 0)] - x[(i, 0)]).powi(2);
+        }
+        (val, grad, hes)
+    }
+}
+
 #[cfg_attr(doc, katexit::katexit)]
 /// Define the linear equality constraint of [NLPSolver] by providing the matrix M of shape k x
 /// m, where m is the size of x and k the number of linear independent constraints.
@@ -179,6 +222,44 @@ pub enum InequalityConstraint {
     Voronoi(VoronoiConstraint),
     Custom(Arc<dyn NLPFunctionTarget + Send + Sync>),
     CustomLogBarrier(Arc<dyn NLPFunctionTarget + Send + Sync>),
+}
+
+impl NLPFunctionTarget for InequalityConstraint {
+    #[inline(always)]
+    fn val(&self, x: &Mat<f64>) -> f64 {
+        match self {
+            InequalityConstraint::Voronoi(c) => c.val(x),
+            InequalityConstraint::Custom(c) => (-c.val(x)).ln(),
+            InequalityConstraint::CustomLogBarrier(c) => c.val(x),
+        }
+    }
+
+    #[inline(always)]
+    fn val_grad(&self, x: &Mat<f64>) -> (f64, Mat<f64>) {
+        match self {
+            InequalityConstraint::Voronoi(c) => c.val_grad(x),
+            InequalityConstraint::Custom(c) => {
+                let (f_val, f_grad) = c.val_grad(x);
+                let grad = 1. / f_val * &f_grad;
+                ((-f_val).ln(), grad)
+            }
+            InequalityConstraint::CustomLogBarrier(c) => c.val_grad(x),
+        }
+    }
+
+    #[inline(always)]
+    fn val_grad_hes(&self, x: &Mat<f64>) -> (f64, Mat<f64>, Mat<f64>) {
+        match self {
+            InequalityConstraint::Voronoi(c) => c.val_grad_hes(x),
+            InequalityConstraint::Custom(c) => {
+                let (f_val, f_grad, f_hes) = c.val_grad_hes(x);
+                let grad = 1. / f_val * &f_grad;
+                let hes = 1. / f_val.powi(2) * &f_grad * f_grad.transpose() + 1. / f_val * f_hes;
+                ((-f_val).ln(), grad, hes)
+            }
+            InequalityConstraint::CustomLogBarrier(c) => c.val_grad_hes(x),
+        }
+    }
 }
 
 /// All constraint types for [NLPSolver].
@@ -245,18 +326,24 @@ impl NLPSolver {
     fn barrier_method(&self, x: DVector<f64>) -> DVector<f64> {
         let mut x = x.view_range(.., ..).into_faer().to_owned();
         let x_size = x.nrows() as f64;
-        let t0 = self.options.barrier_t0;
-        let mut t = t0;
+        let mut t = self.options.barrier_t0;
+        let mut mu = self.options.barrier_mu0;
         let mut i = 0;
         while i < self.options.barrier_max_iter && x_size / t >= self.options.barrier_prec {
             i += 1;
-            x = self.newton_method(x, t);
-            t *= self.options.barrier_mu;
+            let rslt = self.newton_method(x, t);
+            x = rslt.0;
+            if rslt.1 > self.options.barrier_mu_decay_threshold {
+                mu = (mu * self.options.barrier_mu_decay).max(self.options.barrier_mu_min);
+            } else if rslt.1 < self.options.barrier_mu_increase_threshold {
+                mu = (mu * self.options.barrier_mu_increase).min(self.options.barrier_mu_max);
+            }
+            t *= mu;
         }
         x.as_ref().into_nalgebra().column(0).into()
     }
 
-    fn newton_method(&self, mut x: Mat<f64>, t: f64) -> Mat<f64> {
+    fn newton_method(&self, mut x: Mat<f64>, t: f64) -> (Mat<f64>, u64) {
         let x_size = x.nrows();
         let mut a = match &self.pre_computation.lin_equal_newton_mat {
             Some(lin_equal_newton_mat) => lin_equal_newton_mat.clone(),
@@ -274,19 +361,21 @@ impl NLPSolver {
             && !backline_exceeded
         {
             i += 1;
-            let (func_val, mut func_grad, mut func_hes) = self.func.val_grad_hes(&x);
+            let (mut func_val, mut func_grad, mut func_hes) = self.func.val_grad_hes(&x);
+            func_val *= t;
             func_grad *= -t;
             func_hes *= t;
 
             if let Some(bound) = &self.constraints.bound {
-                let (bound_grad, bound_hes) = self.log_barrier_bound_grad_hes(&x, bound);
+                let (bound_val, bound_grad, bound_hes) = bound.val_grad_hes(&x);
+                func_val += bound_val;
                 func_grad -= bound_grad;
                 func_hes += bound_hes;
             }
             if let Some(inequal_vec) = &self.constraints.inequal {
                 for inequal in inequal_vec {
-                    let (inequal_grad, inequal_hes) =
-                        self.log_barrier_inequal_grad_hes(&x, inequal);
+                    let (inequal_val, inequal_grad, inequal_hes) = inequal.val_grad_hes(&x);
+                    func_val += inequal_val;
                     func_grad -= inequal_grad;
                     func_hes += inequal_hes;
                 }
@@ -302,9 +391,9 @@ impl NLPSolver {
             let dx = dx_total.submatrix(0, 0, x_size, 1).to_owned();
             crit = dx.norm_l2();
 
-            self.backline_search(&mut x, dx, &mut backline_exceeded, func_val);
+            self.backline_search(&mut x, dx, &mut backline_exceeded, func_val, t);
         }
-        x
+        (x, i)
     }
 
     #[inline(always)]
@@ -313,7 +402,8 @@ impl NLPSolver {
         x: &mut Mat<f64>,
         mut dx: Mat<f64>,
         backline_exceeded: &mut bool,
-        old_func_val: f64,
+        mut old_func_val: f64,
+        t: f64,
     ) {
         let dx_norm = dx.norm_l2();
         if dx_norm > 1. {
@@ -322,104 +412,40 @@ impl NLPSolver {
         let mut a = self.options.backline_a;
         let mut iter = 0;
         let mut search = true;
+        let mut best_x = x.clone();
+        let mut best_iter = 0;
         while iter < self.options.backline_max_iter && search {
             iter += 1;
             let x_tmp = &*x + a * &dx;
-            let func_val = self.func.val(&x_tmp);
-            if func_val < old_func_val && self.feasibility_check(&x_tmp) {
-                *x = x_tmp.clone();
-                search = false;
-            } else {
-                a *= self.options.backline_b;
+            let func_val = {
+                let mut func_val = t * self.func.val(&x_tmp);
+                if let Some(bound) = &self.constraints.bound {
+                    func_val += bound.val(&x_tmp);
+                }
+                if let Some(inequal_vec) = &self.constraints.inequal {
+                    for inequal in inequal_vec {
+                        func_val += inequal.val(&x_tmp);
+                    }
+                }
+                func_val
+            };
+            if func_val < old_func_val {
+                best_x = x_tmp;
+                best_iter = iter;
+                old_func_val = func_val;
             }
+            // At least one best x must be found before the backline search stops after 3 worse
+            // searches were evaluated.
+            else if best_iter > 0 && iter - best_iter > 3 {
+                search = false;
+            }
+            a *= self.options.backline_b;
         }
-        if iter == self.options.backline_max_iter {
+        // Stop the newton steps when no improvement can be achieved.
+        if (&*x - &best_x).norm_l2() < 1e-8 {
             *backline_exceeded = true;
         }
-    }
-
-    #[inline(always)]
-    fn mat_min(&self, x: &Mat<f64>) -> f64 {
-        let mut min = f64::INFINITY;
-        x.col_iter().for_each(|c| {
-            c.iter().for_each(|&v| {
-                if v < min {
-                    min = v;
-                }
-            });
-        });
-        min
-    }
-
-    #[inline(always)]
-    fn feasibility_check(&self, x: &Mat<f64>) -> bool {
-        if let Some(bound) = &self.constraints.bound
-            && (self.mat_min(&(x - &bound.lower)) < 0. || self.mat_min(&(&bound.upper - x)) < 0.)
-        {
-            return false;
-        }
-        if let Some(inequal_vec) = &self.constraints.inequal {
-            for inequal in inequal_vec {
-                match inequal {
-                    InequalityConstraint::Voronoi(c) => {
-                        let v = c.val(x);
-                        if v.is_nan() {
-                            return false;
-                        }
-                    }
-                    InequalityConstraint::Custom(f) => {
-                        let v = f.val(x);
-                        if v.is_nan() || v > 0. {
-                            return false;
-                        }
-                    }
-                    InequalityConstraint::CustomLogBarrier(f) => {
-                        let v = f.val(x);
-                        if v.is_nan() {
-                            return false;
-                        }
-                    }
-                }
-            }
-        }
-        true
-    }
-
-    fn log_barrier_inequal_grad_hes(
-        &self,
-        x: &Mat<f64>,
-        inequal: &InequalityConstraint,
-    ) -> (Mat<f64>, Mat<f64>) {
-        match inequal {
-            InequalityConstraint::Voronoi(c) => {
-                let (_, grad, hes) = c.val_grad_hes(x);
-                (grad, hes)
-            }
-            InequalityConstraint::Custom(f) => {
-                let (f_val, f_grad, f_hes) = f.val_grad_hes(x);
-                let grad = 1. / f_val * &f_grad;
-                let hes = 1. / f_val.powi(2) * &f_grad * f_grad.transpose() + 1. / f_val * f_hes;
-                (grad, hes)
-            }
-            InequalityConstraint::CustomLogBarrier(f) => {
-                let (_, grad, hes) = f.val_grad_hes(x);
-                (grad, hes)
-            }
-        }
-    }
-
-    #[inline(always)]
-    fn log_barrier_bound_grad_hes(&self, x: &Mat<f64>, bound: &NLPBound) -> (Mat<f64>, Mat<f64>) {
-        let mut grad = Mat::<f64>::zeros(x.nrows(), 1);
-        zip!(&mut grad, x, &bound.lower, &bound.upper)
-            .for_each(|unzip!(g, v, l, u)| *g = 1.0 / (*u - *v) + 1.0 / (*l - *v));
-        let mut hes = Mat::<f64>::zeros(x.nrows(), x.nrows());
-        for i in 0..hes.nrows() {
-            let v = 1.0 / (bound.upper[(i, 0)] - x[(i, 0)]).powi(2)
-                + 1.0 / (bound.lower[(i, 0)] - x[(i, 0)]).powi(2);
-            hes[(i, i)] = v;
-        }
-        (grad, hes)
+        *x = best_x;
     }
 }
 
@@ -518,6 +544,7 @@ mod tests {
             let solver = NLPSolver::new(options, constraints, nlp_target);
             let x0 = DVector::from_vec(vec![0.9]);
             let x_min = solver.minimize(x0);
+            println!("{x_min:?}");
             assert!(x_min.relative_eq(&DVector::from_vec(vec![lower]), 1e-4, 1e-4));
         }
         Ok(())
@@ -638,20 +665,10 @@ mod tests {
         let custom_log_barrier = InequalityConstraint::CustomLogBarrier(Arc::new(voronoi));
 
         let nlp_target: Arc<_> = NLPTargetTest {}.into();
-        let solver = NLPSolver::new(
-            NLPSolverOptions::new(),
-            NLPSolverConstraints {
-                bound: None,
-                lin_equal: None,
-                inequal: None,
-            },
-            nlp_target.clone(),
-        );
+        let gh_custom = custom_log_barrier.val_grad_hes(&x);
 
-        let gh_custom = solver.log_barrier_inequal_grad_hes(&x, &custom_log_barrier);
-
-        assert!((vgh.1 - gh_custom.0).norm_l2() < 1e-8);
-        assert!((vgh.2 - gh_custom.1).norm_l2() < 1e-8);
+        assert!((vgh.1 - gh_custom.1).norm_l2() < 1e-8);
+        assert!((vgh.2 - gh_custom.2).norm_l2() < 1e-8);
 
         let solver = NLPSolver::new(
             NLPSolverOptions::new(),
@@ -681,17 +698,6 @@ mod tests {
         let mut gradient = Mat::<f64>::zeros(1, 1);
         let mut hessian = Mat::<f64>::zeros(1, 1);
 
-        let nlp_target: Arc<_> = NLPTargetTest {}.into();
-        let solver = NLPSolver::new(
-            NLPSolverOptions::new(),
-            NLPSolverConstraints {
-                bound: None,
-                lin_equal: None,
-                inequal: None,
-            },
-            nlp_target,
-        );
-
         supp.row(0).iter().enumerate().for_each(|(x_id, x)| {
             if x_id != 1 {
                 let x_i = SVector::<f64, 1>::from_vec(vec![0.5]);
@@ -699,10 +705,9 @@ mod tests {
                 let vf = VoronoiFunction::new(x_i, x_j);
                 let vf_target = VoronoiFunctionTarget::new(vf);
                 assert!((vf_target.val(&z) - vf_target.val_grad(&z).0).abs() < 1e-8);
-                let inequal = InequalityConstraint::Custom(Arc::new(vf_target));
-                let inequal_gh = solver.log_barrier_inequal_grad_hes(&z, &inequal);
-                gradient += inequal_gh.0;
-                hessian += inequal_gh.1;
+                let inequal = InequalityConstraint::Custom(Arc::new(vf_target)).val_grad_hes(&z);
+                gradient += inequal.1;
+                hessian += inequal.2;
             }
         });
 
