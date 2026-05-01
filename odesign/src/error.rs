@@ -1,3 +1,5 @@
+use crate::Weight;
+
 /// Main error type
 #[derive(thiserror::Error, Debug, PartialEq)]
 pub enum Error {
@@ -62,6 +64,23 @@ pub enum Error {
         index: usize,
         /// The length of the feature set.
         len: usize,
+    },
+    /// Weight value outside the valid [0, 1] range.
+    #[error("weight {value} is outside the valid range [0, 1]")]
+    WeightOutOfRange {
+        /// The invalid value provided.
+        value: f64,
+    },
+    /// Weight is NaN.
+    #[error("weight is NaN")]
+    WeightIsNaN,
+    /// Provided max is smaller than min value.
+    #[error("provided max weight {max} is smaller than min weight {min}")]
+    MaxWeightSmallerThanMin {
+        /// The invalid value provided.
+        max: Weight,
+        /// The invalid value provided.
+        min: Weight,
     },
 }
 

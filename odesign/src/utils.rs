@@ -1,6 +1,82 @@
 use faer::Mat;
 use nalgebra::{Const, Dyn, Matrix, SVector, VecStorage};
 
+use crate::{Error, Result};
+
+/// Weight type with a value between 0.0 and 1.0.
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
+pub struct Weight(f64);
+
+/// Represents a range of weights with a minimum and maximum weight.
+#[derive(Clone)]
+pub struct WeightRange {
+    min: Weight,
+    max: Weight,
+}
+
+impl WeightRange {
+    /// Creates a new `WeightRange` with the given minimum and maximum weights.
+    pub fn new(min: Weight, max: Weight) -> Result<Self> {
+        if max < min {
+            return Err(Error::MaxWeightSmallerThanMin { max, min });
+        }
+        Ok(Self { min, max })
+    }
+}
+
+/// Represents a function that maps a position to a weight.
+pub trait WeightsFunction {
+    /// Returns the weight at the given position.
+    fn weight(&self, pos: usize, max_pos: usize) -> Weight;
+}
+
+impl WeightsFunction for WeightRange {
+    fn weight(&self, pos: usize, max_pos: usize) -> Weight {
+        self.min.lerp(
+            self.max,
+            Weight::try_from(pos as f64 / (max_pos as f64 - 1.))
+                .expect("pos < max_pos by construction"),
+        )
+    }
+}
+
+impl Weight {
+    /// Returns the raw value of the weight.
+    pub fn get(&self) -> f64 {
+        self.0
+    }
+
+    /// Returns the linear interpolation between two weights as weight.
+    pub fn lerp(self, to: Weight, t: Weight) -> Self {
+        Self(self.0 + (to.0 - self.0) * t.0)
+    }
+}
+
+impl TryFrom<f64> for Weight {
+    type Error = Error;
+
+    fn try_from(value: f64) -> std::result::Result<Self, Self::Error> {
+        if value.is_nan() {
+            return Err(Error::WeightIsNaN);
+        } else if !(0.0..=1.0).contains(&value) {
+            return Err(Error::WeightOutOfRange { value });
+        }
+        Ok(Self(value))
+    }
+}
+
+impl From<Weight> for f64 {
+    fn from(value: Weight) -> Self {
+        value.0
+    }
+}
+
+impl std::fmt::Display for Weight {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
 /// Matrix with D rows
 pub type MatrixDRows<const D: usize> = Matrix<f64, Const<D>, Dyn, VecStorage<f64, Const<D>, Dyn>>;
 
@@ -192,5 +268,34 @@ mod tests {
                 assert_eq!(a, b);
             }
         }
+    }
+
+    #[test]
+    fn test_weight() {
+        let error_values = [2.0, f64::MIN, f64::MAX];
+        for value in error_values {
+            assert_eq!(
+                Weight::try_from(value).err(),
+                Some(Error::WeightOutOfRange { value })
+            );
+        }
+        assert!(Weight::try_from(0.).is_ok());
+        assert!(Weight::try_from(1.).is_ok());
+        assert!(Weight::try_from(0.5).is_ok());
+        assert!(Weight::try_from(-1.).is_err());
+        assert!(Weight::try_from(2.).is_err());
+
+        // NaN should return WeightIsNaN error.
+        assert_eq!(Weight::try_from(f64::NAN).err(), Some(Error::WeightIsNaN));
+    }
+
+    #[test]
+    fn test_weight_lerp() -> Result<()> {
+        let w1 = Weight::try_from(0.5)?;
+        let w2 = Weight::try_from(1.0)?;
+        let t = Weight::try_from(0.5)?;
+        let result = w1.lerp(w2, t);
+        assert_eq!(result, Weight::try_from(0.75)?);
+        Ok(())
     }
 }
