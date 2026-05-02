@@ -114,6 +114,32 @@ impl<const D: usize> MatrixUnion<D> for MatrixDRows<D> {
     }
 }
 
+/// Unique columns
+pub trait MatrixUniqueColumns<const D: usize> {
+    /// Returns a the matrix with unique columns.
+    fn unique_columns(&self) -> MatrixDRows<D>;
+}
+
+impl<const D: usize> MatrixUniqueColumns<D> for MatrixDRows<D> {
+    fn unique_columns(&self) -> MatrixDRows<D> {
+        let mut columns: Vec<SVector<f64, D>> = Vec::new();
+        for col in self.column_iter() {
+            let mut duplicated = false;
+            for c in columns.iter() {
+                if (col - c).norm() < 1e-8 {
+                    duplicated = true;
+                    break;
+                }
+            }
+            if !duplicated {
+                columns.push(col.into());
+            }
+        }
+        MatrixDRows::<D>::from_columns(&columns)
+    }
+}
+
+/// Find column indices in a matrix.
 pub trait MatrixFind<const D: usize> {
     fn find_col_indices(&self, mat: &MatrixDRows<D>) -> Vec<usize>;
 }
