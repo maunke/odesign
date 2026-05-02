@@ -221,6 +221,12 @@ impl<const D: usize> Design<D> {
         self
     }
 
+    /// Returns design with given design criterium.
+    pub fn with_crit(mut self, crit: DesignCrit) -> Self {
+        self.crit = crit;
+        self
+    }
+
     /// Normalize weights.
     fn normalize_weights(&mut self) {
         if !self.weights.is_empty() {
