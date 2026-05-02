@@ -28,7 +28,9 @@ pub use optimality::{
     AOptimality, COptimality, CostsOptimality, DOptimality, Optimalities, Optimality,
     OptimalityMeasures, WeightedOptimality,
 };
-pub use utils::{IntoSVector, MatrixDRows, MatrixUnion, Weight, WeightRange, WeightsFunction};
+pub use utils::{
+    IntoSVector, MatrixDRows, MatrixUnion, Weight, WeightRange, WeightsFunction, WeightsKind,
+};
 
 pub use nalgebra::{
     DVector, Matrix1, Matrix2, Matrix3, Matrix4, Matrix5, Matrix6, SMatrix, SVector, Vector1,

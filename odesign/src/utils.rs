@@ -24,6 +24,15 @@ impl WeightRange {
     }
 }
 
+/// Kind of weight.
+#[derive(Clone)]
+pub enum WeightsKind {
+    /// Linear interpolation between a minimum and maximum weight.
+    Linear(WeightRange),
+    /// Constant weight.
+    Constant(Weight),
+}
+
 /// Represents a function that maps a position to a weight.
 pub trait WeightsFunction {
     /// Returns the weight at the given position.
