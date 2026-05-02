@@ -66,6 +66,11 @@ impl<const D: usize> FeatureSet<D> {
         self.features.len()
     }
 
+    /// Returns `true` if the feature set is empty.
+    pub fn is_empty(&self) -> bool {
+        self.features.is_empty()
+    }
+
     /// Returns a subset of the features selected by the given indices.
     ///
     /// Each index must be unique and in range; otherwise returns
@@ -89,6 +94,11 @@ impl<const D: usize> FeatureSet<D> {
             })
             .collect::<Result<Vec<_>>>()?;
         Ok(FeatureSet { features })
+    }
+
+    /// Extends this feature set with the features from another set.
+    pub fn extend(&mut self, other: FeatureSet<D>) {
+        self.features.extend(other.features);
     }
 
     /// Returns a slice of the features.
