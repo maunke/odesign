@@ -88,9 +88,12 @@ pub struct DiscreteDesign<const D: usize> {
     pub supp: MatrixDRows<D>,
 }
 
+/// Replication factor for the discrete design.
 #[derive(Clone, Debug)]
 pub enum ReplicationFactor {
+    /// Fixed number per support vector.
     Fixed(usize),
+    /// Weighted replication factor for each support vector.
     Weighted(f64),
 }
 
@@ -109,6 +112,7 @@ impl<const D: usize> DiscreteDesign<D> {
         Self { replications, supp }
     }
 
+    /// Differs the measurements by number of replications per support vector.
     pub fn diff_measurements(&self, measurements: &Measurements<D>) -> Self {
         let mut d = self.clone();
         let mut measurements_filtered = vec![false; measurements.x.len()];
