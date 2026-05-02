@@ -61,6 +61,11 @@ impl<const D: usize> FeatureSet<D> {
         self.features.push(feature);
     }
 
+    /// From shared vector of features.
+    pub fn from_shared(features: Vec<Arc<dyn Feature<D> + Send + Sync>>) -> FeatureSet<D> {
+        Self { features }
+    }
+
     /// Returns an iterator over the features.
     pub fn iter(&self) -> std::slice::Iter<'_, Arc<dyn Feature<D> + Send + Sync>> {
         self.features.iter()
