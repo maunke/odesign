@@ -6,12 +6,15 @@ extern crate self as odesign;
 
 mod error;
 mod feature;
+/// Feature selection module.
+pub mod feature_selection;
 mod grid;
 mod interior_point_method;
 mod linear_model;
 mod optimal_design;
 mod optimality;
-mod utils;
+/// Utility module.
+pub mod utils;
 
 pub use error::{Error, Result};
 pub use feature::{Feature, FeatureAsAny, FeatureFunction, FeatureSet};
@@ -22,14 +25,16 @@ pub use interior_point_method::{
 pub use linear_model::LinearModel;
 pub use odesign_derive::Feature;
 pub use optimal_design::{
-    CustomDesignBound, Design, DesignBound, DesignConstraint, OptimalDesign, OptimalDesignCriteria,
+    CustomDesignBound, Design, DesignBound, DesignConstraint, DiscreteDesign, Measurements,
+    OptimalDesign, OptimalDesignCriteria, ReplicationFactor,
 };
 pub use optimality::{
     AOptimality, COptimality, CostsOptimality, DOptimality, Optimalities, Optimality,
     OptimalityMeasures, WeightedOptimality,
 };
 pub use utils::{
-    IntoSVector, MatrixDRows, MatrixUnion, Weight, WeightRange, WeightsFunction, WeightsKind,
+    IntoSVector, MatrixDRows, MatrixUnion, MatrixUniqueColumns, Weight, WeightRange,
+    WeightsFunction, WeightsKind,
 };
 
 pub use nalgebra::{

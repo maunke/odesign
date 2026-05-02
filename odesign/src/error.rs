@@ -51,6 +51,29 @@ pub enum Error {
         /// Shape of matrix 2.
         shape2: (usize, usize),
     },
+    /// An argument was provided but is empty.
+    #[error("provided argument {name} is empty")]
+    EmptyArgument {
+        /// Name of the argument
+        name: &'static str,
+    },
+    /// Linear Model Dimension Check
+    #[error("linear model is missing dependency on at least one variable")]
+    LinearModelMissingDependency,
+    /// Targeted model cardinality is unreachable.
+    #[error(
+        "the targeted model cardinality {cardinality_target} is unreachable since max cardinality
+         = null model ({cardinality_null_model}) + feature set ({cardinality_feature_set}) \
+         cardinality"
+    )]
+    TargetModelCardinalityUnreachable {
+        /// Targeted cardinality.
+        cardinality_target: usize,
+        /// Cardinality of null model.
+        cardinality_null_model: usize,
+        /// Cardinality of feature set.
+        cardinality_feature_set: usize,
+    },
     /// An index appears more than once in a subset selection.
     #[error("duplicate index {index} in feature subset")]
     DuplicateIndex {
