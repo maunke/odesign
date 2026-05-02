@@ -101,6 +101,11 @@ impl<const D: usize> FeatureSet<D> {
         self.features.extend(other.features);
     }
 
+    /// Removes a feature from this set by index.
+    pub fn remove(&mut self, index: usize) -> Arc<dyn Feature<D> + Send + Sync> {
+        self.features.remove(index)
+    }
+
     /// Returns a slice of the features.
     pub fn as_slice(&self) -> &[Arc<dyn Feature<D> + Send + Sync>] {
         &self.features
