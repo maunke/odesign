@@ -122,8 +122,7 @@ impl<const D: usize> DiscreteDesign<D> {
                     if *r <= 1 {
                         *r = 0;
                     } else {
-                        // *r -= 1;
-                        *r = 0;
+                        *r -= 1;
                     }
                     measurements_filtered[idx] = true;
                 }
