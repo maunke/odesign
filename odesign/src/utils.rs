@@ -141,6 +141,7 @@ impl<const D: usize> MatrixUniqueColumns<D> for MatrixDRows<D> {
 
 /// Find column indices in a matrix.
 pub trait MatrixFind<const D: usize> {
+    /// Returns the column indices of the columns in the matrix.
     fn find_col_indices(&self, mat: &MatrixDRows<D>) -> Vec<usize>;
 }
 
