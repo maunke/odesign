@@ -314,23 +314,6 @@ impl<const D: usize> FeatureSelection<D> {
             optimalities.push(WeightedOptimality::new(c_opt, c_opt_weight));
         }
 
-        // let static_supp = match has_measurements {
-        //     true => self.measurements.x.clone(),
-        //     false => {
-        //         // calculate D-Optimal Design of Null Model
-        //         let d_opt = Arc::new(DOptimality::new(self.linear_model.clone()));
-        //         let bound = match &self.options.design_constraint {
-        //             DesignConstraint::Bound(b) => b.clone(),
-        //         };
-        //         let mut od = OptimalDesign::new()
-        //             .with_optimality(d_opt)
-        //             .with_init_design(self.options.init_design.clone())
-        //             .with_bound(bound);
-        //         let design = od.solve();
-        //         println!("{design}");
-        //         design.supp.clone()
-        //     }
-        // };
         let static_supp = self.measurements.x.clone();
         if has_measurements {
             let costs_opt = CostsOptimality::new(static_supp.clone(), self.options.cost.alpha);
