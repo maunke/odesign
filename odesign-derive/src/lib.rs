@@ -40,11 +40,11 @@ fn derive_feature_impl(input: DeriveInput) -> syn::Result<proc_macro::TokenStrea
             }
 
             fn val_grad(&self, x: &::odesign::__private::nalgebra::SVector<f64, #dim>) -> (f64, ::odesign::__private::nalgebra::SVector<f64,#dim>) {
-                ::odesign::__private::num_dual::gradient(|v| self.f(&v), *x)
+                ::odesign::__private::num_dual::gradient(|v| self.f(&v), x)
             }
 
             fn val_grad_hes(&self, x: &::odesign::__private::nalgebra::SVector<f64, #dim>) -> (f64, ::odesign::__private::nalgebra::SVector<f64, #dim>, ::odesign::__private::nalgebra::SMatrix<f64, #dim, #dim>) {
-                ::odesign::__private::num_dual::hessian(|v| self.f(&v), *x)
+                ::odesign::__private::num_dual::hessian(|v| self.f(&v), x)
             }
         }
     };
