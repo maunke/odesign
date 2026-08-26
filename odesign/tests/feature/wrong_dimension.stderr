@@ -25,7 +25,7 @@ error[E0308]: mismatched types
   |          expected `2`, found `1`
   |          arguments to this method are incorrect
   |
-  = note: expected reference `&Matrix<_, Const<2>, Const<1>, ArrayStorage<_, 2, 1>>`
+  = note: expected reference `&Matrix<DualVec<f64, f64, Const<1>>, Const<2>, Const<1>, ArrayStorage<DualVec<f64, f64, Const<1>>, 2, 1>>`
              found reference `&Matrix<DualVec<f64, f64, Const<1>>, Const<1>, Const<1>, ArrayStorage<DualVec<f64, f64, Const<1>>, 1, 1>>`
 note: method defined here
  --> src/feature.rs
@@ -43,7 +43,7 @@ error[E0308]: mismatched types
   |          expected `2`, found `1`
   |          arguments to this method are incorrect
   |
-  = note: expected reference `&Matrix<_, Const<2>, Const<1>, ArrayStorage<_, 2, 1>>`
+  = note: expected reference `&Matrix<Dual2Vec<f64, f64, Const<1>>, Const<2>, Const<1>, ArrayStorage<Dual2Vec<f64, f64, Const<1>>, 2, 1>>`
              found reference `&Matrix<Dual2Vec<f64, f64, Const<1>>, Const<1>, Const<1>, ArrayStorage<Dual2Vec<f64, f64, Const<1>>, 1, 1>>`
 note: method defined here
  --> src/feature.rs
