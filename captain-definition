@@ -1,9 +1,12 @@
 {
   "schemaVersion": 2,
   "dockerfileLines": [
-    "FROM ghcr.io/static-web-server/static-web-server:2",
-    "ENV SERVER_CONFIG_FILE=sws.toml",
-    "COPY ./odesign-book/book /public",
-    "COPY ./odesign-book/sws.toml ."
+    "FROM peaceiris/mdbook:latest AS build",
+    "WORKDIR /src",
+    "COPY ./odesign-book .",
+    "RUN mdbook build",
+    "FROM joseluisq/static-web-server:2",
+    "ENV SERVER_ROOT=/public SERVER_PORT=80",
+    "COPY --from=build /src/book /public"
   ]
 }
