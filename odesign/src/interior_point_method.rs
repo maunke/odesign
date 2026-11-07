@@ -124,7 +124,7 @@ impl NLPFunctionTarget for VoronoiConstraint {
             if i != self.x_id {
                 let tmp = self.diff.col(i) / tmp_f[(i, 0)];
                 val -= (-tmp_f[(i, 0)]).ln();
-                grad_col -= tmp;
+                grad_col += tmp;
             }
         }
         (val, grad)
@@ -142,7 +142,7 @@ impl NLPFunctionTarget for VoronoiConstraint {
             if i != self.x_id {
                 let tmp = self.diff.col(i) / tmp_f[(i, 0)];
                 val -= (-tmp_f[(i, 0)]).ln();
-                grad_col -= &tmp;
+                grad_col += &tmp;
                 hes += &tmp * tmp.transpose();
             }
         }
@@ -229,7 +229,7 @@ impl NLPFunctionTarget for InequalityConstraint {
     fn val(&self, x: &Mat<f64>) -> f64 {
         match self {
             InequalityConstraint::Voronoi(c) => c.val(x),
-            InequalityConstraint::Custom(c) => (-c.val(x)).ln(),
+            InequalityConstraint::Custom(c) => -(-c.val(x)).ln(),
             InequalityConstraint::CustomLogBarrier(c) => c.val(x),
         }
     }
@@ -240,8 +240,8 @@ impl NLPFunctionTarget for InequalityConstraint {
             InequalityConstraint::Voronoi(c) => c.val_grad(x),
             InequalityConstraint::Custom(c) => {
                 let (f_val, f_grad) = c.val_grad(x);
-                let grad = 1. / f_val * &f_grad;
-                ((-f_val).ln(), grad)
+                let grad = -1. / f_val * &f_grad;
+                (-(-f_val).ln(), grad)
             }
             InequalityConstraint::CustomLogBarrier(c) => c.val_grad(x),
         }
@@ -253,9 +253,9 @@ impl NLPFunctionTarget for InequalityConstraint {
             InequalityConstraint::Voronoi(c) => c.val_grad_hes(x),
             InequalityConstraint::Custom(c) => {
                 let (f_val, f_grad, f_hes) = c.val_grad_hes(x);
-                let grad = 1. / f_val * &f_grad;
-                let hes = 1. / f_val.powi(2) * &f_grad * f_grad.transpose() + 1. / f_val * f_hes;
-                ((-f_val).ln(), grad, hes)
+                let grad = -1. / f_val * &f_grad;
+                let hes = 1. / f_val.powi(2) * &f_grad * f_grad.transpose() - 1. / f_val * f_hes;
+                (-(-f_val).ln(), grad, hes)
             }
             InequalityConstraint::CustomLogBarrier(c) => c.val_grad_hes(x),
         }

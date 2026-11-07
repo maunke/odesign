@@ -231,7 +231,7 @@ fn test_optimal_design_dcrit_poly_1_custom_bound() -> Result<()> {
     let design = od.solve();
 
     let weights_rslt = DVector::from_element(2, 0.5);
-    let supp_rslt = MatrixDRows::from_vec(vec![-1., 1.]);
+    let supp_rslt = MatrixDRows::from_vec(vec![-0.9, 0.9]);
 
     assert!(
         design
