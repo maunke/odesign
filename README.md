@@ -32,9 +32,10 @@ level introduction and theoretical background and at the docs on
         semidefinite programming for finding optimal designs" (doi:
         [10.1007/s11222-017-9741-y](https://doi.org/10.1007/s11222-017-9741-y))
 - Research:
-  - [ ] New optimal design feature selection algorithm, a mixture of SFFS, D-,
+  - [x] New optimal design feature selection algorithm, a mixture of SFFS, D-,
         C- and Measurements-Costs-Optimality, allowing to perform model feature
         selection and measurements alternating
+  - [ ] Research framework to evaluate the new method in several scenarios
 
 ## Basic Example
 
